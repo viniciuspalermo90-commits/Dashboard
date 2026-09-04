@@ -2,124 +2,180 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Portal Operacional — Logística</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         :root {
-            --primary: #0d47a1;
-            --primary-light: #1976d2;
-            --primary-dark: #0a2540;
-            --accent-gold: #fbbf24;
-            --bg-light: #f4f6f9;
+            --primary: #1d4ed8;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --accent-gold: #f59e0b;
+            --bg-light: #f3f4f6;
             --card-bg: #ffffff;
-            --text-dark: #1f2937;
+            --text-dark: #111827;
             --text-muted: #6b7280;
             --border-color: #e5e7eb;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius-md: 12px;
+            --radius-lg: 16px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
-        .container { max-width: 1440px; margin: 0 auto; padding: 24px; }
+        .container { max-width: 1440px; margin: 0 auto; padding: 20px; }
+
+        /* Estilização da Barra de Rolagem */
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 
         /* ================= TELA DE LOGIN ================= */
         .login-wrapper {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
-            display: flex; justify-content: center; align-items: center; z-index: 10000;
+            background: linear-gradient(135deg, #0f172a 0%, var(--primary-dark) 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 10000; padding: 20px;
         }
         .login-card {
-            background: #ffffff; width: 90%; max-width: 400px; padding: 40px 30px;
-            border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
+            background: #ffffff; width: 100%; max-width: 420px; padding: 40px 30px;
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); text-align: center;
+            animation: fadeIn 0.4s ease-out;
         }
-        .login-card h2 { color: var(--primary-dark); margin-bottom: 8px; font-size: 24px; }
-        .login-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .login-card h2 { color: var(--text-dark); margin-bottom: 8px; font-size: 24px; font-weight: 800; }
+        .login-card p { color: var(--text-muted); font-size: 15px; margin-bottom: 24px; }
         .login-input {
-            width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 8px;
+            width: 100%; padding: 16px; border: 2px solid var(--border-color); border-radius: var(--radius-md);
             font-size: 16px; margin-bottom: 16px; outline: none; transition: 0.2s; text-align: center;
+            background: #f9fafb;
         }
-        .login-input:focus { border-color: var(--primary-light); }
+        .login-input:focus { border-color: var(--primary-light); background: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         .btn-login {
-            width: 100%; background: var(--primary); color: #ffffff; border: none; padding: 14px;
-            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            width: 100%; background: var(--primary); color: #ffffff; border: none; padding: 16px;
+            border-radius: var(--radius-md); font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(29, 78, 216, 0.2);
         }
-        .btn-login:hover { background: var(--primary-dark); }
-        .login-loading { font-size: 14px; color: var(--primary-light); font-weight: bold; margin-bottom: 20px; }
-        .error-msg { color: #dc2626; font-size: 13px; margin-top: 10px; display: none; }
-        .login-toggle { margin-top: 20px; font-size: 12px; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+        .btn-login:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-login:active { transform: translateY(1px); }
+        .login-loading { font-size: 15px; color: var(--primary); font-weight: 600; margin-bottom: 20px; }
+        .error-msg { color: #dc2626; font-size: 14px; font-weight: 500; margin-top: 12px; display: none; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca; }
+        .login-toggle { margin-top: 24px; font-size: 14px; color: var(--primary); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .login-toggle:hover { color: var(--primary-dark); text-decoration: underline; }
 
         /* ================= GERAL / COMPONENTES ================= */
         header {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
-            color: #ffffff; padding: 28px 32px; border-radius: 14px; box-shadow: var(--shadow-md); margin-bottom: 24px;
+            background: #ffffff; color: var(--text-dark); padding: 24px 30px; border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border-color);
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
         }
-        header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-        header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+        header h1 { font-size: 24px; font-weight: 800; color: var(--text-dark); }
+        header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
         
-        .rules-card { background: #fffbeb; border-left: 5px solid var(--accent-gold); padding: 18px 24px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; }
-        .rules-card strong { color: #9a3412; }
+        .rules-card { background: #eff6ff; border-left: 4px solid var(--primary-light); padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 14px; color: #1e3a8a; }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: var(--card-bg); padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
+        .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .kpi-card.highlight { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); border: none; }
+        .kpi-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .kpi-val { font-size: 28px; font-weight: 800; color: var(--primary-dark); display: block; margin: 8px 0; }
+        .kpi-card.highlight .kpi-val { color: #854d0e; }
+        .kpi-card.highlight .kpi-label, .kpi-card.highlight .kpi-sub { color: #a16207; }
+        .kpi-sub { font-size: 13px; color: var(--text-muted); }
 
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .kpi-card { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
-        .kpi-card.highlight { border-color: #fef08a; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
-        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
-        .kpi-val { font-size: 24px; font-weight: 800; color: var(--primary); display: block; margin: 6px 0; }
-        .kpi-card.highlight .kpi-val { color: #b45309; }
-        .kpi-sub { font-size: 12px; color: var(--text-muted); }
-
-        .btn-export { background: #2e7d32; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .btn-logout { background: #dc2626; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-export { background: #10b981; color: #ffffff; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .btn-export:hover { background: #059669; }
+        .btn-logout { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-logout:hover { background: #fee2e2; }
 
         /* ================= DASHBOARD ADMIN ================= */
         #adminDashboard { display: none; }
-        .controls-panel { background: var(--card-bg); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-        .tabs-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .tab-btn { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: all 0.2s ease; }
-        .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 2px 6px rgba(13, 71, 161, 0.25); }
-        .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .filter-group input { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; outline: none; min-width: 240px; }
+        .controls-panel { background: var(--card-bg); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: var(--shadow-sm); }
+        .tabs-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tab-btn { background: #f3f4f6; border: 1px solid transparent; padding: 10px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+        .tab-btn:hover { background: #e5e7eb; color: var(--text-dark); }
+        .tab-btn.active { background: var(--primary-dark); color: #ffffff; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); }
+        
+        .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
+        .filter-group input { padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 14px; outline: none; min-width: 260px; background: #f9fafb; transition: 0.2s; }
+        .filter-group input:focus { border-color: var(--primary-light); background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
-        .table-container { background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow-x: auto; display: none; margin-bottom: 30px; }
-        .table-container.active { display: block; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; white-space: nowrap; }
-        thead tr:nth-child(1) th { background-color: var(--primary-dark); color: #ffffff; padding: 10px 8px; text-transform: uppercase; }
-        thead tr:nth-child(2) th { background-color: var(--primary-light); color: #ffffff; padding: 10px 8px; }
-        tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.15s; }
-        tbody tr:nth-child(even) { background-color: #f9fafb; }
-        tbody tr:hover { background-color: #eff6ff; }
-        td { padding: 10px 12px; vertical-align: middle; }
+        .table-container { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow-x: auto; display: none; margin-bottom: 30px; position: relative; }
+        .table-container.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; white-space: nowrap; }
+        thead tr:nth-child(1) th { background-color: #f8fafc; color: var(--text-muted); padding: 12px 10px; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); }
+        thead tr:nth-child(2) th { background-color: #ffffff; color: var(--text-dark); padding: 14px 10px; font-weight: 600; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
+        
+        tbody tr { cursor: pointer; transition: background 0.2s; }
+        tbody tr:nth-child(even) td { background-color: #f9fafb; }
+        tbody tr:nth-child(odd) td { background-color: #ffffff; }
+        tbody tr:hover td { background-color: #eff6ff; }
+        
+        td { padding: 16px 12px; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
         .text-left { text-align: left; }
         
-        .rank-badge { font-weight: 700; font-size: 13px; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #eef2f7; }
-        .rank-1 { background: #fef08a; color: #854d0e; border: 2px solid #eab308; }
-        .rank-2 { background: #e2e8f0; color: #334155; }
-        .rank-3 { background: #fed7aa; color: #9a3412; }
+        /* Sticky Column (Nome do Motorista fixo no Scroll Horizontal) */
+        th:nth-child(3), td:nth-child(3) { position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
+        thead tr:nth-child(2) th:nth-child(3) { z-index: 11; }
+        
+        .rank-badge { font-weight: 800; font-size: 14px; color: var(--text-dark); display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; }
+        .rank-1 { background: #fef08a; color: #854d0e; border: 2px solid #eab308; box-shadow: 0 2px 4px rgba(234, 179, 8, 0.2); }
+        .rank-2 { background: #e2e8f0; color: #334155; border: 2px solid #cbd5e1; }
+        .rank-3 { background: #fed7aa; color: #9a3412; border: 2px solid #fdba74; }
 
-        .badge-pts { font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .badge-pts { font-weight: 700; padding: 4px 10px; border-radius: 100px; font-size: 12px; }
         .pts-high { background: #dcfce7; color: #166534; }
         .pts-zero { background: #fee2e2; color: #991b1b; }
-        .meta-count { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; }
+        .meta-count { display: inline-block; padding: 4px 12px; border-radius: 100px; font-weight: 800; font-size: 12px; }
         .meta-3 { background: #dcfce7; color: #15803d; }
         .meta-2 { background: #fef9c3; color: #a16207; }
         .meta-1 { background: #fee2e2; color: #b91c1c; }
 
         /* ================= DASHBOARD MOTORISTA ================= */
         #driverDashboard { display: none; }
-        .driver-profile-card { background: var(--card-bg); border-radius: 16px; padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; }
+        .driver-profile-card { background: var(--card-bg); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; }
         
-        /* Modal Styles para Admin */
-        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .modal-card { background: #ffffff; width: 90%; max-width: 650px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
-        .modal-close { position: absolute; top: 16px; right: 16px; background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; }
-        .modal-header { border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
-        .modal-header h2 { color: var(--primary); font-size: 20px; margin-bottom: 4px; }
-        .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px; }
-        .modal-item { background: #f9fafb; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .modal-item span { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;}
-        .modal-item strong { font-size: 14px; color: var(--text-dark); display: block; }
+        /* Modal Styles */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        .modal-card { background: #ffffff; width: 100%; max-width: 600px; border-radius: var(--radius-lg); padding: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease; }
+        .modal-close { position: absolute; top: 20px; right: 20px; background: #f3f4f6; border: none; width: 36px; height: 36px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .modal-close:hover { background: #e5e7eb; color: var(--text-dark); }
+        .modal-header { border-bottom: 2px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 20px; }
+        .modal-header h2 { color: var(--text-dark); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px; }
+        .modal-item { background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; }
+        .modal-item span { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .modal-item strong { font-size: 15px; color: var(--text-dark); display: block; font-weight: 600; }
+
+        /* ================= MEDIA QUERIES (MOBILE) ================= */
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
+            .btn-logout { width: 100%; text-align: center; }
+            
+            .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+            .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
+            .filter-group { flex-direction: column; width: 100%; }
+            .filter-group input { width: 100%; min-width: auto; }
+            .btn-export { width: 100%; justify-content: center; }
+            
+            .tabs-group { overflow-x: auto; padding-bottom: 8px; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .tab-btn { white-space: nowrap; flex-shrink: 0; }
+            
+            .modal-card { padding: 24px; }
+            .modal-grid { grid-template-columns: 1fr; } /* Modal em 1 coluna no celular */
+            
+            td { padding: 12px 10px; font-size: 13px; }
+            
+            .driver-profile-card { padding: 20px; }
+        }
     </style>
 </head>
 <body>
@@ -138,14 +194,14 @@
             <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Apenas números)" autocomplete="off">
             <button class="btn-login" onclick="loginMotorista()">Acessar Meus Resultados</button>
             <div id="errorMotorista" class="error-msg">CPF não encontrado na base de dados.</div>
-            <div class="login-toggle" onclick="toggleLogin('ADMIN')">Sou Gestor/Administrador</div>
+            <div class="login-toggle" onclick="toggleLogin('ADMIN')">Acesso Gestor / Administrador</div>
         </div>
 
         <div id="loginFormAdmin" style="display:none;">
             <input type="password" id="adminSenha" class="login-input" placeholder="Senha de Acesso" autocomplete="off">
             <button class="btn-login" onclick="loginAdmin()">Acessar Dashboard Global</button>
             <div id="errorAdmin" class="error-msg">Senha incorreta.</div>
-            <div class="login-toggle" onclick="toggleLogin('MOTORISTA')">Sou Motorista</div>
+            <div class="login-toggle" onclick="toggleLogin('MOTORISTA')">Voltar para Acesso Motorista</div>
         </div>
     </div>
 </div>
@@ -154,17 +210,14 @@
 <div class="container" id="adminDashboard">
     <header>
         <div>
-            <h1>Dashboard do Gestor — Visão Global</h1>
-            <p>Acesso total liberado. Visualizando operação completa.</p>
+            <h1>Dashboard do Gestor</h1>
+            <p>Visão global consolidada. Arraste a tabela para os lados no celular.</p>
         </div>
-        <button onclick="logout()" class="btn-logout">Sair</button>
+        <button onclick="logout()" class="btn-logout">Sair do Sistema</button>
     </header>
 
     <div class="rules-card">
-        <strong>Modo Administrador:</strong> <br>
-        1. Ranking Geral unifica <strong>somente motoristas SD 1 e SD 2</strong>.<br>
-        2. Motoristas de <strong>SD 3</strong> não aparecem no Geral, apenas em sua própria aba.<br>
-        3. Clique em qualquer motorista para abrir a Ficha Detalhada.
+        <strong>Modo Administrador:</strong> O Ranking Geral unifica <strong>somente motoristas SD 1 e SD 2</strong>. Motoristas de <strong>SD 3</strong> ficam na aba exclusiva. Clique em qualquer linha para abrir a ficha completa do motorista.
     </div>
 
     <div class="kpi-grid" id="kpiGrid" style="display: grid;">
@@ -188,8 +241,8 @@
     <div class="controls-panel">
         <div class="tabs-group" id="tabsGroup"></div>
         <div class="filter-group">
-            <input type="text" id="searchInput" placeholder="Filtrar motorista..." onkeyup="filterTable()">
-            <button class="btn-export" onclick="exportExcel()">📥 Exportar Aba Atual</button>
+            <input type="text" id="searchInput" placeholder="Buscar por motorista ou código..." onkeyup="filterTable()">
+            <button class="btn-export" onclick="exportExcel()">📥 Exportar Excel</button>
         </div>
     </div>
 
@@ -201,18 +254,18 @@
     <header>
         <div>
             <h1 id="driverHeaderTitle">Olá, Motorista</h1>
-            <p>Seus resultados consolidados do período atual.</p>
+            <p>Seus resultados consolidados do ciclo atual.</p>
         </div>
-        <button onclick="logout()" class="btn-logout">Sair</button>
+        <button onclick="logout()" class="btn-logout">Sair do Sistema</button>
     </header>
 
     <div class="kpi-grid" style="display: grid;">
-        <div class="kpi-card highlight" style="border-color: var(--primary-light);">
-            <span class="kpi-label">Sua Posição no Grupo</span>
-            <span class="kpi-val" id="drvKpiPos">-</span>
-            <span class="kpi-sub" id="drvKpiPosSub">No seu Supervisor</span>
+        <div class="kpi-card highlight" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+            <span class="kpi-label" style="color: #1e40af;">Sua Posição no Grupo</span>
+            <span class="kpi-val" id="drvKpiPos" style="color: #1e3a8a;">-</span>
+            <span class="kpi-sub" id="drvKpiPosSub" style="color: #1e40af;">No seu Supervisor</span>
         </div>
-        <div class="kpi-card highlight" style="border-color: var(--accent-gold);">
+        <div class="kpi-card highlight">
             <span class="kpi-label">Sua Posição Geral</span>
             <span class="kpi-val" id="drvKpiGeral">-</span>
             <span class="kpi-sub">Geral (SD 1 e SD 2)</span>
@@ -230,8 +283,7 @@
     </div>
 
     <div class="driver-profile-card">
-        <h2 style="color: var(--primary-dark); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">Seu Detalhamento Operacional</h2>
-        
+        <h2 style="color: var(--text-dark); border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; font-weight: 800;">Detalhamento de Performance</h2>
         <div class="modal-grid" id="driverPersonalGrid">
             <!-- Injetado via JS -->
         </div>
@@ -244,7 +296,7 @@
         <button class="modal-close" onclick="closeModal()">✕</button>
         <div class="modal-header">
             <h2 id="modalDriverName">Nome do Motorista</h2>
-            <p id="modalDriverCode" style="font-size: 12px; color: var(--text-muted);">Código: - | Grupo: -</p>
+            <p id="modalDriverCode" style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Código: - | Grupo: -</p>
         </div>
         <div class="modal-grid" id="modalGrid"></div>
     </div>
@@ -264,7 +316,7 @@
 
     let masterData = {};
     let activeTab = "Geral Consolidado";
-    let validCPFs = {}; // Mapeia CPF -> Código Motorista
+    let validCPFs = {}; 
 
     window.addEventListener('DOMContentLoaded', () => {
         syncFromGithub();
@@ -300,12 +352,8 @@
         try {
             for (const fileName of fileNames) {
                 const url = './' + encodeURIComponent(fileName);
-                
                 const response = await fetch(url);
-                if (!response.ok) {
-                    console.warn(`Arquivo não encontrado: ${fileName}`);
-                    continue; 
-                }
+                if (!response.ok) continue; 
                 
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
@@ -313,9 +361,7 @@
                 workbook.SheetNames.forEach(sheetName => {
                     const worksheet = workbook.Sheets[sheetName];
                     const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    let headerIdx = -1;
-                    let type = "";
+                    let headerIdx = -1; let type = "";
 
                     for (let i = 0; i < Math.min(15, aoa.length); i++) {
                         if (!aoa[i]) continue;
@@ -330,41 +376,30 @@
 
                     if (headerIdx !== -1) {
                         const json = XLSX.utils.sheet_to_json(worksheet, { range: headerIdx, defval: "-" });
-                        
                         json.forEach(r => {
                             if (type === "BASE") {
-                                let c = getVal(r, ['Codigo', 'Código']);
-                                let cpf = getVal(r, ['CPF']);
+                                let c = getVal(r, ['Codigo', 'Código']); let cpf = getVal(r, ['CPF']);
                                 if(c) {
                                     baseMap[String(c).trim()] = r;
-                                    if(cpf && cpf !== '-') {
-                                        let limpo = String(cpf).replace(/\D/g, ''); 
-                                        validCPFs[limpo] = String(c).trim();
-                                    }
+                                    if(cpf && cpf !== '-') validCPFs[String(cpf).replace(/\D/g, '')] = String(c).trim();
                                 }
                             } else if (type === "DEV") {
-                                let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']);
-                                if(c) devMap[String(c).trim()] = r;
+                                let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']); if(c) devMap[String(c).trim()] = r;
                             } else if (type === "KM") {
-                                let c = getVal(r, ['Motorista', 'Codigo']);
-                                if(c) kmMap[String(c).trim()] = r;
+                                let c = getVal(r, ['Motorista', 'Codigo']); if(c) kmMap[String(c).trim()] = r;
                             } else if (type === "PMR") {
-                                let c = getVal(r, ['Código', 'Codigo']);
-                                if(c) pmrMap[String(c).trim()] = r;
+                                let c = getVal(r, ['Código', 'Codigo']); if(c) pmrMap[String(c).trim()] = r;
                             } else if (type === "PR") {
-                                let c = getVal(r, ['Codigo', 'Código']);
-                                let city = getVal(r, ['Cidade']);
+                                let c = getVal(r, ['Codigo', 'Código']); let city = getVal(r, ['Cidade']);
                                 if(c && city && city !== '-') {
                                     let cStr = String(c).trim();
                                     if(!citiesMap[cStr]) citiesMap[cStr] = new Set();
                                     citiesMap[cStr].add(String(city).trim().toUpperCase());
                                 }
                             } else if (type === "NPS") {
-                                let city = getVal(r, ['Cidade']);
-                                let prob = getVal(r, ['Probabilidade de Recomendar']);
+                                let city = getVal(r, ['Cidade']); let prob = getVal(r, ['Probabilidade de Recomendar']);
                                 if(city && city !== '-' && prob && prob !== '-') {
-                                    let cityStr = String(city).trim().toUpperCase();
-                                    let pStr = String(prob).trim().toLowerCase();
+                                    let cityStr = String(city).trim().toUpperCase(); let pStr = String(prob).trim().toLowerCase();
                                     if(!npsMap[cityStr]) npsMap[cityStr] = { P: 0, D: 0, R: 0 };
                                     npsMap[cityStr].R += 1;
                                     if(pStr === 'promotor') npsMap[cityStr].P += 1;
@@ -381,16 +416,13 @@
                 document.getElementById('loginLoading').style.display = 'none';
                 document.getElementById('loginFormMotorista').style.display = 'block';
             } else {
-                document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro: Nenhuma Base de Motoristas válida foi encontrada.</span>`;
+                document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Nenhum dado válido encontrado.</span>`;
             }
-
         } catch (error) {
-            console.error(error);
             document.getElementById('loginLoading').innerHTML = `<span style='color:red; font-size:13px;'>ERRO TÉCNICO DETECTADO:<br>${error.message}</span>`;
         }
     }
 
-    // ================= ROTINAS DE LOGIN =================
     function loginAdmin() {
         const senha = document.getElementById('adminSenha').value;
         if (senha === "admin123") {
@@ -410,7 +442,6 @@
 
         if (validCPFs[inputCpf]) {
             const codMotorista = validCPFs[inputCpf];
-            
             let driverGrupoRow = null;
             for (let g of ["SD 1", "SD 2", "SD 3"]) {
                 if (masterData[g]) {
@@ -418,81 +449,58 @@
                     if (found) { driverGrupoRow = found; break; }
                 }
             }
-            
             if (driverGrupoRow) {
                 let driverGeralRow = masterData["Geral Consolidado"] ? masterData["Geral Consolidado"].find(x => String(x.codigo) === codMotorista) : null;
-                
                 document.getElementById('loginWrapper').style.display = 'none';
                 document.getElementById('driverDashboard').style.display = 'block';
-                
                 buildDriverView(driverGrupoRow, driverGeralRow);
             } else {
-                mostrarErroDrv("Motorista sem dados operacionais computados neste ciclo.");
+                mostrarErroDrv("Motorista sem dados neste ciclo.");
             }
         } else {
-            mostrarErroDrv("CPF não cadastrado na base.");
+            mostrarErroDrv("CPF não cadastrado.");
         }
     }
 
     function mostrarErroDrv(msg) {
         const errDiv = document.getElementById('errorMotorista');
-        errDiv.innerText = msg;
-        errDiv.style.display = 'block';
+        errDiv.innerText = msg; errDiv.style.display = 'block';
         setTimeout(() => { errDiv.style.display = 'none'; }, 3500);
     }
-    // ====================================================
 
     function parseNum(val) {
         if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
-        let v = String(val).replace('%', '').replace(',', '.').trim();
-        return parseFloat(v);
+        return parseFloat(String(val).replace('%', '').replace(',', '.').trim());
     }
 
     function parsePct(val) {
         if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
         let strVal = String(val).trim().replace(',', '.');
-        let isPctStr = strVal.includes('%');
         let v = parseFloat(strVal.replace('%', ''));
         if (isNaN(v)) return NaN;
-        if (!isPctStr && Math.abs(v) <= 1.0 && v !== 0) v = v * 100;
+        if (!strVal.includes('%') && Math.abs(v) <= 1.0 && v !== 0) v = v * 100;
         return v;
     }
 
-    function fmtPct(num) {
-        if (isNaN(num) || num === undefined || num === null) return '-';
-        return num.toFixed(2).replace('.', ',') + '%';
-    }
-
-    function fmtNum(num) {
-        if (isNaN(num) || num === undefined || num === null) return '-';
-        return num.toFixed(2).replace('.', ',');
-    }
+    function fmtPct(num) { return (isNaN(num) || num == null) ? '-' : num.toFixed(2).replace('.', ',') + '%'; }
+    function fmtNum(num) { return (isNaN(num) || num == null) ? '-' : num.toFixed(2).replace('.', ','); }
 
     function getVal(obj, keys) {
         const lowerKeys = keys.map(k => k.toLowerCase());
         for (let k of Object.keys(obj)) {
-            if (lowerKeys.includes(k.trim().toLowerCase())) {
-                if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '-' && obj[k] !== '') return obj[k];
-            }
+            if (lowerKeys.includes(k.trim().toLowerCase()) && obj[k] !== undefined && obj[k] !== null && obj[k] !== '-' && obj[k] !== '') return obj[k];
         }
         return undefined;
     }
 
-    function calcAtingimento(real, meta) {
-        if (isNaN(real) || isNaN(meta) || meta === 0) return '-';
-        let val = (real / meta) * 100;
-        return val.toFixed(2).replace('.', ',') + '%';
-    }
+    function calcAtingimento(real, meta) { return (isNaN(real) || isNaN(meta) || meta === 0) ? '-' : ((real / meta) * 100).toFixed(2).replace('.', ',') + '%'; }
 
     function executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap) {
         let consolidados = [];
         const META_RATING = 4.94, META_DEV = 2.45, META_NPS = 75.00;
         
         for (const [code, b] of Object.entries(baseMap)) {
-            const dev = devMap[code] || {};
-            const km = kmMap[code] || {};
-            const pmr = pmrMap[code] || {};
-
+            const dev = devMap[code] || {}; const km = kmMap[code] || {}; const pmr = pmrMap[code] || {};
             let sup = String(getVal(b, ['Supervisor Rota', 'Supervisor']) || '0').trim();
             let META_DISP = (sup.includes('1')) ? 10.00 : 20.00;
 
@@ -502,37 +510,16 @@
 
             const driverCities = citiesMap[code] ? Array.from(citiesMap[code]) : [];
             let totP = 0, totD = 0, totR = 0;
-            driverCities.forEach(c => {
-                if (npsMap[c]) { totP += npsMap[c].P; totD += npsMap[c].D; totR += npsMap[c].R; }
-            });
+            driverCities.forEach(c => { if (npsMap[c]) { totP += npsMap[c].P; totD += npsMap[c].D; totR += npsMap[c].R; } });
             let r_nps = (totR > 0) ? ((totP - totD) / totR) * 100 : NaN;
 
-            // ============================================
-            // CORREÇÃO DO ERRO PT_R AQUI!
-            // ============================================
             let pts = 0; let metas = 0;
             let pt_r = 0, pt_d = 0, pt_n = 0, pt_k = 0;
             
-            if (!isNaN(r_rating)) {
-                pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0));
-                pts += pt_r;
-                if (r_rating >= META_RATING) metas++;
-            }
-            if (!isNaN(r_dev)) {
-                pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0));
-                pts += pt_d;
-                if (r_dev <= META_DEV) metas++;
-            }
-            if (!isNaN(r_nps)) {
-                pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0));
-                pts += pt_n;
-                if (r_nps >= META_NPS) metas++;
-            }
-            if (!isNaN(r_disp)) {
-                pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0));
-                pts += pt_k;
-                if (r_disp <= META_DISP) metas++;
-            }
+            if (!isNaN(r_rating)) { pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0)); pts += pt_r; if (r_rating >= META_RATING) metas++; }
+            if (!isNaN(r_dev)) { pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0)); pts += pt_d; if (r_dev <= META_DEV) metas++; }
+            if (!isNaN(r_nps)) { pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0)); pts += pt_n; if (r_nps >= META_NPS) metas++; }
+            if (!isNaN(r_disp)) { pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0)); pts += pt_k; if (r_disp <= META_DISP) metas++; }
 
             let sheetGrupo = "Outros";
             if (sup.includes('1')) sheetGrupo = "SD 1";
@@ -542,26 +529,17 @@
             if (isNaN(r_rating) && isNaN(r_dev) && isNaN(r_disp) && driverCities.length === 0) continue;
 
             consolidados.push({
-                codigo: code,
-                nome: getVal(b, ['Nome', 'Nome Motorista']) || '-',
-                grupo: sheetGrupo,
-                pontos_totais: pts,
-                atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0,
-                metas_batidas: metas,
-                
+                codigo: code, nome: getVal(b, ['Nome', 'Nome Motorista']) || '-', grupo: sheetGrupo,
+                pontos_totais: pts, atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0, metas_batidas: metas,
                 real_rating: r_rating, meta_rating: META_RATING, pt_r: pt_r,
                 real_dev: r_dev, meta_dev: META_DEV, pt_d: pt_d,
                 real_nps: r_nps, meta_nps: META_NPS, pt_n: pt_n,
                 real_disp: r_disp, meta_disp: META_DISP, pt_k: pt_k,
-                
-                status_base: b.status || '-',
-                cidades: driverCities.join(', ') || '-',
-                tot_p: totP, tot_d: totD, tot_r: totR
+                status_base: b.status || '-', cidades: driverCities.join(', ') || '-', tot_p: totP, tot_d: totD, tot_r: totR
             });
         }
 
         masterData = {};
-        
         masterData["Geral Consolidado"] = consolidados.filter(x => x.grupo === "SD 1" || x.grupo === "SD 2");
         masterData["SD 1"] = consolidados.filter(x => x.grupo === "SD 1");
         masterData["SD 2"] = consolidados.filter(x => x.grupo === "SD 2");
@@ -569,25 +547,21 @@
 
         Object.keys(masterData).forEach(k => {
             if(masterData[k].length === 0) { delete masterData[k]; return; }
-            masterData[k].sort((a, b) => {
-                if (b.pontos_totais !== a.pontos_totais) return b.pontos_totais - a.pontos_totais;
-                return b.atend_vol - a.atend_vol;
-            });
+            masterData[k].sort((a, b) => { if (b.pontos_totais !== a.pontos_totais) return b.pontos_totais - a.pontos_totais; return b.atend_vol - a.atend_vol; });
             masterData[k].forEach((r, idx) => r.pos = idx + 1);
         });
     }
 
-    // ================= FUNÇÕES DO DASHBOARD DO MOTORISTA =================
     function buildDriverView(r_grupo, r_geral) {
         document.getElementById('driverHeaderTitle').innerText = `Olá, ${r_grupo.nome.split(' ')[0]}`;
         
         let rankClassGrupo = r_grupo.pos === 1 ? 'rank-1' : (r_grupo.pos === 2 ? 'rank-2' : (r_grupo.pos === 3 ? 'rank-3' : ''));
-        document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClassGrupo}" style="width:40px; height:40px; font-size:18px;">${r_grupo.pos}</span>`;
+        document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClassGrupo}" style="width:44px; height:44px; font-size:20px;">${r_grupo.pos}</span>`;
         document.getElementById('drvKpiPosSub').innerText = `No seu grupo (${r_grupo.grupo})`;
         
         if (r_geral) {
             let rankClassGeral = r_geral.pos === 1 ? 'rank-1' : (r_geral.pos === 2 ? 'rank-2' : (r_geral.pos === 3 ? 'rank-3' : ''));
-            document.getElementById('drvKpiGeral').innerHTML = `<span class="rank-badge ${rankClassGeral}" style="width:40px; height:40px; font-size:18px;">${r_geral.pos}</span>`;
+            document.getElementById('drvKpiGeral').innerHTML = `<span class="rank-badge ${rankClassGeral}" style="width:44px; height:44px; font-size:20px;">${r_geral.pos}</span>`;
         } else {
             document.getElementById('drvKpiGeral').innerHTML = `<span style="font-size: 24px; font-weight: bold; color: var(--text-muted);">-</span>`;
         }
@@ -598,18 +572,16 @@
         document.getElementById('driverPersonalGrid').innerHTML = `
             <div class="modal-item"><span>Código | Supervisor</span><strong>${r_grupo.codigo} | ${r_grupo.grupo}</strong></div>
             <div class="modal-item"><span>Status na Base</span><strong>${r_grupo.status_base || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 2;"><span>Cidades Atendidas</span><strong>${r_grupo.cidades || '-'}</strong></div>
+            <div class="modal-item" style="grid-column: span 1 / -1;"><span>Cidades Atendidas</span><strong>${r_grupo.cidades || '-'}</strong></div>
+            <div class="modal-item" style="grid-column: span 1 / -1;"><span>NPS Respostas (Cruzado)</span><strong>${r_grupo.tot_p || 0} Promotores / ${r_grupo.tot_d || 0} Detratores / ${r_grupo.tot_r || 0} Total</strong></div>
             
-            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas (Cruzado)</span><strong>${r_grupo.tot_p || 0} Promotores / ${r_grupo.tot_d || 0} Detratores / ${r_grupo.tot_r || 0} Total</strong></div>
-
-            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
-            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
-            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
-            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
+            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
+            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
+            <div class="modal-item"><span>Calculado NPSM</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
+            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
         `;
     }
 
-    // ================= FUNÇÕES DO DASHBOARD DO GESTOR =================
     function buildAdminViews() {
         const tabsGroup = document.getElementById('tabsGroup');
         tabsGroup.innerHTML = '';
@@ -664,20 +636,20 @@
                         <td><span class="rank-badge ${badgeClass}">${r.pos}</span></td>
                         <td><strong>${r.codigo}</strong></td>
                         <td class="text-left"><strong>${r.nome}</strong></td>
-                        <td><span class="points-badge">${r.pontos_totais}</span></td>
+                        <td><span class="points-badge">${r.pontos_totais} pts</span></td>
                         <td style="${r.pos===1 ? 'font-weight:bold;color:#b45309;' : ''}">${r.atend_vol}</td>
-                        <td><span class="meta-count ${cMetas}">${r.metas_batidas}</span></td>
+                        <td><span class="meta-count ${cMetas}">${r.metas_batidas} / 4</span></td>
                         
-                        <td>${fmtNum(r.real_rating)} <span style="color:#aaa">(${fmtNum(r.meta_rating)})</span></td>
+                        <td>${fmtNum(r.real_rating)} <span style="color:#aaa; font-size: 11px;">(${fmtNum(r.meta_rating)})</span></td>
                         <td><strong>${calcAtingimento(r.real_rating, r.meta_rating)}</strong></td>
                         
-                        <td>${fmtPct(r.real_dev)} <span style="color:#aaa">(${fmtPct(r.meta_dev)})</span></td>
+                        <td>${fmtPct(r.real_dev)} <span style="color:#aaa; font-size: 11px;">(${fmtPct(r.meta_dev)})</span></td>
                         <td><strong>${calcAtingimento(r.real_dev, r.meta_dev)}</strong></td>
                         
-                        <td>${fmtPct(r.real_nps)} <span style="color:#aaa">(${fmtPct(r.meta_nps)})</span></td>
+                        <td>${fmtPct(r.real_nps)} <span style="color:#aaa; font-size: 11px;">(${fmtPct(r.meta_nps)})</span></td>
                         <td><strong>${calcAtingimento(r.real_nps, r.meta_nps)}</strong></td>
                         
-                        <td>${fmtPct(r.real_disp)} <span style="color:#aaa">(${fmtPct(r.meta_disp)})</span></td>
+                        <td>${fmtPct(r.real_disp)} <span style="color:#aaa; font-size: 11px;">(${fmtPct(r.meta_disp)})</span></td>
                         <td><strong>${calcAtingimento(r.real_disp, r.meta_disp)}</strong></td>
                     </tr>
                 `;
@@ -692,10 +664,7 @@
     function updateAdminKpis(tabName) {
         const data = masterData[tabName];
         if (!data || data.length === 0) return;
-
-        let totAtend = 0;
-        data.forEach(x => totAtend += x.atend_vol);
-
+        let totAtend = 0; data.forEach(x => totAtend += x.atend_vol);
         document.getElementById('admKpiTopName').innerText = `1º ${data[0].nome}`;
         document.getElementById('admKpiTopScore').innerHTML = `<strong>${data[0].pontos_totais} pts</strong> (${data[0].atend_vol} avaliações)`;
         document.getElementById('admKpiTotal').innerText = data.length;
@@ -706,33 +675,28 @@
         const query = document.getElementById('searchInput').value.toLowerCase();
         const activeContainer = document.querySelector('.table-container.active');
         if (!activeContainer) return;
-
         const rows = activeContainer.querySelectorAll('tbody tr');
-        rows.forEach(tr => {
-            tr.style.display = tr.innerText.toLowerCase().includes(query) ? '' : 'none';
-        });
+        rows.forEach(tr => { tr.style.display = tr.innerText.toLowerCase().includes(query) ? '' : 'none'; });
     }
 
     function openAdminModal(code) {
         let r = null;
         for (const rows of Object.values(masterData)) {
-            r = rows.find(x => String(x.codigo) === String(code));
-            if (r) break;
+            r = rows.find(x => String(x.codigo) === String(code)); if (r) break;
         }
         if (!r) return;
 
         document.getElementById('modalDriverName').innerText = r.nome;
         document.getElementById('modalDriverCode').innerText = `Código: ${r.codigo} | Grupo: ${r.grupo}`;
-
         document.getElementById('modalGrid').innerHTML = `
-            <div class="modal-item"><span>Pontuação Geral</span><strong>${r.pontos_totais} Pontos (${r.metas_batidas} Metas)</strong></div>
-            <div class="modal-item"><span>Atendimentos / Avaliações</span><strong>${r.atend_vol} Entregas</strong></div>
-            <div class="modal-item" style="grid-column: span 2;"><span>Cidades Atendidas</span><strong>${r.cidades || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
+            <div class="modal-item"><span>Pontuação Geral</span><strong>${r.pontos_totais} Pts (${r.metas_batidas} Metas)</strong></div>
+            <div class="modal-item"><span>Avaliações / Entregas</span><strong>${r.atend_vol}</strong></div>
+            <div class="modal-item" style="grid-column: span 1 / -1;"><span>Cidades Atendidas</span><strong>${r.cidades || '-'}</strong></div>
+            <div class="modal-item" style="grid-column: span 1 / -1;"><span>NPS Respostas</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
             <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00</strong></div>
             <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)}</strong></div>
             <div class="modal-item"><span>Calculado NPSM</span><strong>${fmtPct(r.real_nps)}</strong></div>
-            <div class="modal-item"><span>Real Dispersão</span><strong>${fmtPct(r.real_disp)}</strong></div>
+            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r.real_disp)}</strong></div>
         `;
         document.getElementById('adminDriverModal').style.display = 'flex';
     }
@@ -749,18 +713,10 @@
             "Posição": r.pos, "Código": r.codigo, "Nome": r.nome, "Grupo": r.grupo,
             "Pontos Totais": r.pontos_totais, "Avaliações/Entregas": r.atend_vol, "Metas Batidas": r.metas_batidas,
             "Status Base": r.status_base, "Cidades Atendidas": r.cidades,
-            
-            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating),
-            "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating),
-            
-            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev),
-            "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev),
-            
-            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps),
-            "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps),
-
-            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp),
-            "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp)
+            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating), "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating),
+            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev), "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev),
+            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps), "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps),
+            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp), "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp)
         }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportArr), activeTab);
