@@ -114,7 +114,7 @@
     <div class="sync-card">
         <div class="sync-info">
             <h3>🔄 Status de Sincronização</h3>
-            <p id="syncStatusText">Conectando ao banco de planilhas na nuvem...</p>
+            <p id="syncStatusText">Pronto para conectar ao banco de planilhas na nuvem...</p>
         </div>
         <button class="btn-sync" onclick="syncFromGithub()">Sincronizar Agora</button>
     </div>
@@ -128,7 +128,12 @@
 
     <!-- Loading Spinner / Message -->
     <div class="loading-state" id="loadingState">
-        ⏳ Baixando e cruzando arquivos do GitHub. Por favor, aguarde...
+        ⏳ Baixando e cruzando arquivos do GitHub. Por favor, aguarde alguns segundos...
+    </div>
+
+    <!-- AVISO DE ESTADO VAZIO: AGORA FORA DA CAIXA DE TABELAS PARA NÃO DAR ERRO -->
+    <div class="empty-state" id="emptyState">
+        Nenhum dado cruzado ainda. Clique em "Sincronizar Agora" para puxar as informações.
     </div>
 
     <div class="kpi-grid" id="kpiGrid">
@@ -145,20 +150,20 @@
         <div class="kpi-card">
             <span class="kpi-label">Total de Motoristas</span>
             <span class="kpi-val" id="kpiTotal">-</span>
-            <span class="kpi-sub">Lidos da Base de Cadastro</span>
+            <span class="kpi-sub">Ativos com dados operacionais cruzados</span>
         </div>
     </div>
 
     <div class="controls-panel" id="controlsPanel">
         <div class="tabs-group" id="tabsGroup"></div>
         <div class="filter-group">
-            <input type="text" id="searchInput" placeholder="Buscar motorista..." onkeyup="filterTable()">
-            <button class="btn-export" onclick="exportExcel()">📥 Exportar Aba Atual (.xlsx)</button>
+            <input type="text" id="searchInput" placeholder="Filtrar por nome ou código..." onkeyup="filterTable()">
+            <button class="btn-export" onclick="exportExcel()">📥 Exportar Planilha Atual</button>
         </div>
     </div>
 
     <div id="tablesWrapper">
-        <div class="empty-state" id="emptyState">Nenhum dado cruzado ainda. Sincronize com o repositório.</div>
+        <!-- Tabelas serão injetadas aqui -->
     </div>
 </div>
 
@@ -284,6 +289,7 @@
             if (Object.keys(baseMap).length === 0) {
                 document.getElementById('syncStatusText').innerHTML = "<span style='color:red;'>Nenhuma Base de Motoristas encontrada no GitHub. Verifique as configurações.</span>";
                 document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
                 return;
             }
 
@@ -296,6 +302,7 @@
             console.error(error);
             document.getElementById('syncStatusText').innerHTML = `<span style='color:red;'>Erro de conexão: ${error.message}</span>`;
             document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
         }
     }
 
