@@ -157,10 +157,7 @@
             header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
             .btn-logout { width: 100%; text-align: center; }
             
-            /* Admin KPI ajustado */
             #adminDashboard .kpi-grid { grid-template-columns: 1fr; }
-            
-            /* Driver KPI ajustado */
             #driverDashboard .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
             
             .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
@@ -173,34 +170,20 @@
             /* TABELA VIRA BLOCOS NO CELULAR */
             .table-container { background: transparent; border: none; box-shadow: none; margin-bottom: 10px; }
             .table-container table { width: 100%; border-collapse: collapse; }
-            .table-container thead { display: none; } /* Esconde o cabeçalho no celular */
+            .table-container thead { display: none; }
             .table-container tbody tr {
-                display: block;
-                background: var(--card-bg) !important;
-                margin-bottom: 16px;
-                border-radius: var(--radius-lg);
-                border: 1px solid var(--border-color);
-                box-shadow: var(--shadow-sm);
-                padding: 12px;
+                display: block; background: var(--card-bg) !important; margin-bottom: 16px;
+                border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+                box-shadow: var(--shadow-sm); padding: 12px;
             }
             .table-container tbody td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 0;
-                border-bottom: 1px solid #f3f4f6;
-                text-align: right !important;
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 0; border-bottom: 1px solid #f3f4f6; text-align: right !important;
             }
             .table-container tbody td:last-child { border-bottom: none; }
-            /* Injeta a label baseada no atributo data-label do HTML */
             .table-container tbody td::before {
-                content: attr(data-label);
-                font-size: 11px;
-                color: var(--text-muted);
-                text-transform: uppercase;
-                font-weight: 700;
-                text-align: left;
-                margin-right: 16px;
+                content: attr(data-label); font-size: 11px; color: var(--text-muted);
+                text-transform: uppercase; font-weight: 700; text-align: left; margin-right: 16px;
             }
 
             .modal-card { padding: 24px; }
@@ -221,6 +204,7 @@
             ⏳ Sincronizando banco de dados...
         </div>
 
+        <!-- FORMULÁRIO MOTORISTA -->
         <div id="loginFormMotorista" style="display:none;">
             <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Apenas números)" autocomplete="off">
             <button class="btn-login" onclick="loginMotorista()">Acessar Meus Resultados</button>
@@ -228,11 +212,11 @@
             <div class="login-toggle" onclick="toggleLogin('ADMIN')">Acesso Gestor / Administrador</div>
         </div>
 
+        <!-- FORMULÁRIO ADMIN -->
         <div id="loginFormAdmin" style="display:none;">
-            <input type="text" id="adminUser" class="login-input" placeholder="Seu Usuário (ex: admin)" autocomplete="off">
-            <input type="password" id="adminSenha" class="login-input" placeholder="Sua Senha" autocomplete="off">
+            <input type="password" id="adminSenha" class="login-input" placeholder="Senha de Administrador" autocomplete="off">
             <button class="btn-login" onclick="loginAdmin()">Acessar Dashboard Global</button>
-            <div id="errorAdmin" class="error-msg">Usuário ou senha incorretos.</div>
+            <div id="errorAdmin" class="error-msg">Senha incorreta.</div>
             <div class="login-toggle" onclick="toggleLogin('MOTORISTA')">Voltar para Acesso Motorista</div>
         </div>
     </div>
@@ -331,15 +315,6 @@
 </div>
 
 <script>
-    // ================= CONTAS DE GESTORES (ADMINS) =================
-    // Cadastre aqui os usuários que terão acesso total ao sistema
-    const ADMIN_USERS = {
-        "Vinicius Palermo": { senha: "Vini2000", nome: "admin1" },
-        "Estevão": { senha: "senha123", nome: "Supervisor SD 1" },
-        "Jose Mario": { senha: "senha123", nome: "Supervisor SD 2" },
-        "roberto": { senha: "roberto123", nome: "Roberto (Gerência)" }
-    };
-
     // ================= CONFIGURAÇÃO DOS ARQUIVOS =================
     const fileNames = [
         "Base Motoristas.xlsx",
@@ -364,6 +339,7 @@
     function toggleLogin(tipo) {
         document.getElementById('errorMotorista').style.display = 'none';
         document.getElementById('errorAdmin').style.display = 'none';
+        
         if (tipo === 'ADMIN') {
             document.getElementById('loginFormMotorista').style.display = 'none';
             document.getElementById('loginFormAdmin').style.display = 'block';
@@ -375,7 +351,6 @@
 
     function logout() {
         document.getElementById('cpfInput').value = "";
-        document.getElementById('adminUser').value = "";
         document.getElementById('adminSenha').value = "";
         document.getElementById('adminDashboard').style.display = 'none';
         document.getElementById('driverDashboard').style.display = 'none';
@@ -461,13 +436,10 @@
     }
 
     function loginAdmin() {
-        const user = document.getElementById('adminUser').value.trim().toLowerCase();
         const senha = document.getElementById('adminSenha').value;
-        
-        if (ADMIN_USERS[user] && ADMIN_USERS[user].senha === senha) {
+        if (senha === "admin123") {
             document.getElementById('loginWrapper').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
-            document.getElementById('adminHeaderTitle').innerText = `Dashboard: ${ADMIN_USERS[user].nome}`;
             buildAdminViews();
         } else {
             const errDiv = document.getElementById('errorAdmin');
@@ -492,7 +464,7 @@
             if (driverGrupoRow) {
                 document.getElementById('loginWrapper').style.display = 'none';
                 document.getElementById('driverDashboard').style.display = 'block';
-                buildDriverView(driverGrupoRow); // Enviamos apenas os dados dele
+                buildDriverView(driverGrupoRow);
             } else {
                 mostrarErroDrv("Motorista sem dados neste ciclo.");
             }
