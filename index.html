@@ -121,7 +121,6 @@
         td { padding: 16px 12px; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
         .text-left { text-align: left; }
         
-        /* Sticky Column (Nome do Motorista fixo no Scroll Horizontal) */
         th:nth-child(3), td:nth-child(3) { position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
         thead tr:nth-child(2) th:nth-child(3) { z-index: 11; }
         
@@ -138,21 +137,30 @@
         .meta-2 { background: #fef9c3; color: #a16207; }
         .meta-1 { background: #fee2e2; color: #b91c1c; }
 
-        /* ================= DASHBOARD MOTORISTA ================= */
+        /* ================= DASHBOARD MOTORISTA E MODAIS ================= */
         #driverDashboard { display: none; }
         .driver-profile-card { background: var(--card-bg); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; }
         
-        /* Modal Styles */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
         .modal-card { background: #ffffff; width: 100%; max-width: 600px; border-radius: var(--radius-lg); padding: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease; }
         .modal-close { position: absolute; top: 20px; right: 20px; background: #f3f4f6; border: none; width: 36px; height: 36px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .modal-close:hover { background: #e5e7eb; color: var(--text-dark); }
         .modal-header { border-bottom: 2px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 20px; }
         .modal-header h2 { color: var(--text-dark); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        
         .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px; }
-        .modal-item { background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; }
+        .modal-item { background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; transition: 0.2s; }
         .modal-item span { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
         .modal-item strong { font-size: 15px; color: var(--text-dark); display: block; font-weight: 600; }
+
+        /* DESTAQUE DE METAS BATIDAS (HIGHLIGHT) */
+        .modal-item.meta-achieved {
+            background: #f0fdf4 !important; 
+            border-color: #86efac !important;
+            box-shadow: 0 2px 4px rgba(22, 101, 52, 0.05);
+        }
+        .modal-item.meta-achieved span { color: #166534 !important; }
+        .modal-item.meta-achieved strong { color: #14532d !important; }
 
         /* ================= MEDIA QUERIES (MOBILE) ================= */
         @media (max-width: 768px) {
@@ -170,7 +178,7 @@
             .tab-btn { white-space: nowrap; flex-shrink: 0; }
             
             .modal-card { padding: 24px; }
-            .modal-grid { grid-template-columns: 1fr; } /* Modal em 1 coluna no celular */
+            .modal-grid { grid-template-columns: 1fr; } 
             
             td { padding: 12px 10px; font-size: 13px; }
             
@@ -569,16 +577,32 @@
         document.getElementById('drvKpiPts').innerText = r_grupo.pontos_totais;
         document.getElementById('drvKpiMetas').innerText = r_grupo.metas_batidas;
 
+        // VERIFICAÇÃO DE METAS BATIDAS
+        const hitRating = (r_grupo.real_rating >= r_grupo.meta_rating) ? 'meta-achieved' : '';
+        const hitDev = (r_grupo.real_dev <= r_grupo.meta_dev) ? 'meta-achieved' : '';
+        const hitNps = (r_grupo.real_nps >= r_grupo.meta_nps) ? 'meta-achieved' : '';
+        const hitDisp = (r_grupo.real_disp <= r_grupo.meta_disp) ? 'meta-achieved' : '';
+
+        const iconRating = (r_grupo.real_rating >= r_grupo.meta_rating) ? '✅ ' : '';
+        const iconDev = (r_grupo.real_dev <= r_grupo.meta_dev) ? '✅ ' : '';
+        const iconNps = (r_grupo.real_nps >= r_grupo.meta_nps) ? '✅ ' : '';
+        const iconDisp = (r_grupo.real_disp <= r_grupo.meta_disp) ? '✅ ' : '';
+
+        const colorRating = hitRating ? '#166534' : 'var(--primary)';
+        const colorDev = hitDev ? '#166534' : 'var(--primary)';
+        const colorNps = hitNps ? '#166534' : 'var(--primary)';
+        const colorDisp = hitDisp ? '#166534' : 'var(--primary)';
+
         document.getElementById('driverPersonalGrid').innerHTML = `
             <div class="modal-item"><span>Código | Supervisor</span><strong>${r_grupo.codigo} | ${r_grupo.grupo}</strong></div>
             <div class="modal-item"><span>Status na Base</span><strong>${r_grupo.status_base || '-'}</strong></div>
             <div class="modal-item" style="grid-column: span 1 / -1;"><span>Cidades Atendidas</span><strong>${r_grupo.cidades || '-'}</strong></div>
             <div class="modal-item" style="grid-column: span 1 / -1;"><span>NPS Respostas (Cruzado)</span><strong>${r_grupo.tot_p || 0} Promotores / ${r_grupo.tot_d || 0} Detratores / ${r_grupo.tot_r || 0} Total</strong></div>
             
-            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
-            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
-            <div class="modal-item"><span>Calculado NPSM</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
-            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:var(--primary); font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
+            <div class="modal-item ${hitRating}"><span>${iconRating}Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:${colorRating}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
+            <div class="modal-item ${hitDev}"><span>${iconDev}Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:${colorDev}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
+            <div class="modal-item ${hitNps}"><span>${iconNps}Calculado NPSM</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:${colorNps}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
+            <div class="modal-item ${hitDisp}"><span>${iconDisp}Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:${colorDisp}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
         `;
     }
 
