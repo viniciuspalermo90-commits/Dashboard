@@ -302,7 +302,7 @@
 
         try {
             for (const fileName of fileNames) {
-                const url = `https://raw.githubusercontent.com/${githubRepo}/${branch}/${encodeURIComponent(fileName)}`;
+                const url = `./${fileName}`;
                 const response = await fetch(url);
                 if (!response.ok) continue; 
                 
