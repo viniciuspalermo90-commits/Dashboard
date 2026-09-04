@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Inteligente — Nuvem (GitHub Sync)</title>
-    <!-- SheetJS CDN para processar o Excel em memória -->
+    <title>Portal do Motorista — Dashboard Operacional</title>
+    <!-- SheetJS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -22,8 +22,36 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg-light); color: var(--text-dark); padding: 24px; line-height: 1.5; }
-        .container { max-width: 1440px; margin: 0 auto; }
+        body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+        .container { max-width: 1440px; margin: 0 auto; padding: 24px; }
+
+        /* ================= TELA DE LOGIN ================= */
+        .login-wrapper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .login-card {
+            background: #ffffff; width: 90%; max-width: 400px; padding: 40px 30px;
+            border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
+        }
+        .login-card h2 { color: var(--primary-dark); margin-bottom: 8px; font-size: 24px; }
+        .login-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        .login-input {
+            width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 8px;
+            font-size: 16px; margin-bottom: 16px; outline: none; transition: 0.2s; text-align: center;
+        }
+        .login-input:focus { border-color: var(--primary-light); }
+        .btn-login {
+            width: 100%; background: var(--primary); color: #ffffff; border: none; padding: 14px;
+            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-login:hover { background: var(--primary-dark); }
+        .login-loading { font-size: 14px; color: var(--primary-light); font-weight: bold; margin-bottom: 20px; }
+        .error-msg { color: #dc2626; font-size: 13px; margin-top: 10px; display: none; }
+
+        /* ================= DASHBOARD ================= */
+        #dashboardMain { display: none; } /* Oculto inicialmente */
 
         header {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
@@ -33,20 +61,12 @@
         header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
         header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
 
-        /* Sync Card */
-        .sync-card {
-            background: var(--card-bg); border-left: 5px solid var(--primary-light); border-radius: 12px; padding: 20px 30px;
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: var(--shadow-sm);
-        }
-        .sync-info h3 { font-size: 18px; color: var(--primary-dark); margin-bottom: 4px; }
-        .sync-info p { font-size: 13px; color: var(--text-muted); }
-        .btn-sync { background: var(--primary-light); color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .btn-sync:hover { background: var(--primary); }
-
+        .sync-card { display: none; } /* Ocultado pois o sync é no login agora */
+        
         .rules-card { background: #fffbeb; border-left: 5px solid var(--accent-gold); padding: 18px 24px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; }
         .rules-card strong { color: #9a3412; }
 
-        .kpi-grid { display: none; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .kpi-card { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
         .kpi-card.highlight { border-color: #fef08a; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
         .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
@@ -54,7 +74,7 @@
         .kpi-card.highlight .kpi-val { color: #b45309; }
         .kpi-sub { font-size: 12px; color: var(--text-muted); }
 
-        .controls-panel { background: var(--card-bg); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .controls-panel { background: var(--card-bg); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
         .tabs-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .tab-btn { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: all 0.2s ease; }
         .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 2px 6px rgba(13, 71, 161, 0.25); }
@@ -86,9 +106,6 @@
         .meta-2 { background: #fef9c3; color: #a16207; }
         .meta-1 { background: #fee2e2; color: #b91c1c; }
 
-        .loading-state { text-align: center; padding: 50px 20px; font-size: 16px; font-weight: bold; color: var(--primary); display: none; }
-        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border-color); }
-
         /* Modal Styles */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .modal-card { background: #ffffff; width: 90%; max-width: 650px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
@@ -103,37 +120,42 @@
 </head>
 <body>
 
-<div class="container">
+<!-- TELA DE LOGIN -->
+<div class="login-wrapper" id="loginWrapper">
+    <div class="login-card">
+        <h2>Portal do Motorista</h2>
+        <p>Acesse seu painel e ranking operacional</p>
+        
+        <div id="loginLoading" class="login-loading">
+            ⏳ Conectando e baixando dados...
+        </div>
+
+        <div id="loginForm" style="display:none;">
+            <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Somente números)" autocomplete="off">
+            <button class="btn-login" onclick="fazerLogin()">Acessar Resultados</button>
+            <div id="loginError" class="error-msg">CPF não encontrado na base ou base não carregada. Tente novamente.</div>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted);">
+            Se você for gestor, <a href="#" onclick="forcarAcessoGestor()" style="color: var(--primary);">clique aqui</a>.
+        </div>
+    </div>
+</div>
+
+<!-- DASHBOARD PRINCIPAL -->
+<div class="container" id="dashboardMain">
     <header>
         <div>
-            <h1>Dashboard Unificado em Nuvem</h1>
-            <p>Conectado ao repositório GitHub da operação. Atualizações automáticas processadas via API.</p>
+            <h1>Dashboard Operacional Unificado</h1>
+            <p>Conectado ao banco de dados via GitHub.</p>
         </div>
     </header>
 
-    <div class="sync-card">
-        <div class="sync-info">
-            <h3>🔄 Status de Sincronização</h3>
-            <p id="syncStatusText">Pronto para conectar ao banco de planilhas na nuvem...</p>
-        </div>
-        <button class="btn-sync" onclick="syncFromGithub()">Sincronizar Agora</button>
-    </div>
-
     <div class="rules-card">
-        <strong>Correções Ativas no Sistema:</strong> <br>
+        <strong>Regras Ativas:</strong> <br>
         1. Fórmula de Atingimento %: <code>(Real / Meta) * 100</code>.<br>
-        2. Leitura de Porcentagem: O motor lê formatos cruzados (0.15) e converte para exatos 15,00%. Zeros (0,00%) são estritamente preservados.<br>
-        3. Ficha Individual: Clique na linha do motorista no Ranking para abrir o <strong>Pop-up</strong> com todas as informações detalhadas.
-    </div>
-
-    <!-- Loading Spinner / Message -->
-    <div class="loading-state" id="loadingState">
-        ⏳ Baixando e cruzando arquivos do GitHub. Por favor, aguarde alguns segundos...
-    </div>
-
-    <!-- AVISO DE ESTADO VAZIO: AGORA FORA DA CAIXA DE TABELAS PARA NÃO DAR ERRO -->
-    <div class="empty-state" id="emptyState">
-        Nenhum dado cruzado ainda. Clique em "Sincronizar Agora" para puxar as informações.
+        2. Leitura de Porcentagem: O sistema converte formatos crus (ex: 0.15) para exatos 15,00%. Zeros (0,00%) são estritamente preservados.<br>
+        3. Clique na linha de qualquer motorista para abrir o <strong>Resumo Detalhado</strong>.
     </div>
 
     <div class="kpi-grid" id="kpiGrid">
@@ -150,7 +172,7 @@
         <div class="kpi-card">
             <span class="kpi-label">Total de Motoristas</span>
             <span class="kpi-val" id="kpiTotal">-</span>
-            <span class="kpi-sub">Ativos com dados operacionais cruzados</span>
+            <span class="kpi-sub">Ativos com dados operacionais</span>
         </div>
     </div>
 
@@ -162,12 +184,10 @@
         </div>
     </div>
 
-    <div id="tablesWrapper">
-        <!-- Tabelas serão injetadas aqui -->
-    </div>
+    <div id="tablesWrapper"></div>
 </div>
 
-<!-- Modal Pop-Up de Detalhamento do Motorista -->
+<!-- Modal Pop-Up de Detalhamento -->
 <div class="modal-backdrop" id="driverModal" onclick="closeModal(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <button class="modal-close" onclick="closeModal()">✕</button>
@@ -181,8 +201,9 @@
 
 <script>
     // ================= CONFIGURAÇÃO DO GITHUB =================
+    // ⚠️ SUBSTITUA COM OS DADOS REAIS DO SEU REPOSITÓRIO
     const githubRepo = "viniciuspalermo90-commits/Dashboard"; 
-    const branch = "main"; // Altere para "master" se a branch principal do seu repositório for master
+    const branch = "main"; 
     
     const fileNames = [
         "Base Motoristas.xlsx",
@@ -196,31 +217,30 @@
 
     let masterData = {};
     let activeTab = "";
+    
+    // Novo dicionário para Login: CPF limpo -> Código do Motorista
+    let validCPFs = {};
 
-    // Iniciar auto-sync ao abrir a página
     window.addEventListener('DOMContentLoaded', () => {
         syncFromGithub();
+        
+        // Adiciona atalho para logar com "Enter"
+        document.getElementById("cpfInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                fazerLogin();
+            }
+        });
     });
 
     async function syncFromGithub() {
-        document.getElementById('loadingState').style.display = 'block';
-        document.getElementById('emptyState').style.display = 'none';
-        document.getElementById('kpiGrid').style.display = 'none';
-        document.getElementById('controlsPanel').style.display = 'none';
-        document.getElementById('tablesWrapper').innerHTML = '';
-        document.getElementById('syncStatusText').innerText = "Baixando arquivos da nuvem...";
-
         let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
 
         try {
             for (const fileName of fileNames) {
                 const url = `https://raw.githubusercontent.com/${githubRepo}/${branch}/${encodeURIComponent(fileName)}`;
-                
                 const response = await fetch(url);
-                if (!response.ok) {
-                    console.warn(`Arquivo não encontrado ou erro HTTP: ${fileName}`);
-                    continue; 
-                }
+                if (!response.ok) continue; 
                 
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
@@ -232,7 +252,6 @@
                     let headerIdx = -1;
                     let type = "";
 
-                    // Scanner de cabeçalho
                     for (let i = 0; i < Math.min(15, aoa.length); i++) {
                         if (!aoa[i]) continue;
                         let rowStr = aoa[i].join(" ").toLowerCase();
@@ -251,7 +270,15 @@
                         json.forEach(r => {
                             if (type === "BASE") {
                                 let c = getVal(r, ['Codigo', 'Código']);
-                                if(c) baseMap[String(c).trim()] = r;
+                                let cpf = getVal(r, ['CPF']); // Captura do CPF
+                                if(c) {
+                                    baseMap[String(c).trim()] = r;
+                                    // Guarda o CPF limpo (só números) apontando para o Código do motorista
+                                    if(cpf && cpf !== '-') {
+                                        let limpo = String(cpf).replace(/\D/g, '');
+                                        validCPFs[limpo] = String(c).trim();
+                                    }
+                                }
                             } else if (type === "DEV") {
                                 let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']);
                                 if(c) devMap[String(c).trim()] = r;
@@ -286,25 +313,67 @@
                 });
             }
 
-            if (Object.keys(baseMap).length === 0) {
-                document.getElementById('syncStatusText').innerHTML = "<span style='color:red;'>Nenhuma Base de Motoristas encontrada no GitHub. Verifique as configurações.</span>";
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-                return;
+            if (Object.keys(baseMap).length > 0) {
+                executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
             }
-
-            executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
             
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('syncStatusText').innerHTML = "<span style='color:green;'>Sincronizado com sucesso! Dados atualizados.</span>";
+            // Dados prontos, libera tela de login
+            document.getElementById('loginLoading').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
 
         } catch (error) {
             console.error(error);
-            document.getElementById('syncStatusText').innerHTML = `<span style='color:red;'>Erro de conexão: ${error.message}</span>`;
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro de conexão: Verifique o nome do repositório no HTML.</span>`;
         }
     }
+
+    // ================= LÓGICA DE LOGIN =================
+    function fazerLogin() {
+        let inputCpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
+        
+        if (inputCpf === "") {
+            mostrarErroLogin("Digite seu CPF.");
+            return;
+        }
+
+        // Verifica se o CPF existe no mapeamento
+        if (validCPFs[inputCpf]) {
+            const codMotorista = validCPFs[inputCpf];
+            
+            // Esconde Login, Mostra Dashboard
+            document.getElementById('loginWrapper').style.display = 'none';
+            document.getElementById('dashboardMain').style.display = 'block';
+            
+            // Procura o motorista para abrir o Pop-up de boas vindas
+            // Vamos mudar a aba ativa caso ele seja de SD 1, SD 2 ou SD 3
+            let foundTab = "Geral Consolidado";
+            for (let [tab, rows] of Object.entries(masterData)) {
+                if (tab !== "Geral Consolidado" && rows.find(x => x.codigo === codMotorista)) {
+                    foundTab = tab;
+                }
+            }
+            switchTab(foundTab);
+            
+            // Abre o modal do motorista automaticamente
+            setTimeout(() => { openDriverModal(codMotorista); }, 500);
+
+        } else {
+            mostrarErroLogin("CPF não cadastrado na base.");
+        }
+    }
+
+    function mostrarErroLogin(msg) {
+        const errDiv = document.getElementById('loginError');
+        errDiv.innerText = msg;
+        errDiv.style.display = 'block';
+        setTimeout(() => { errDiv.style.display = 'none'; }, 4000);
+    }
+
+    function forcarAcessoGestor() {
+        document.getElementById('loginWrapper').style.display = 'none';
+        document.getElementById('dashboardMain').style.display = 'block';
+    }
+    // ====================================================
 
     // Utilitários Matemáticos e de Parse
     function parseNum(val) {
@@ -462,12 +531,7 @@
     }
 
     function buildViews() {
-        document.getElementById('emptyState').style.display = 'none';
-        document.getElementById('kpiGrid').style.display = 'grid';
-        document.getElementById('controlsPanel').style.display = 'flex';
-
-        const tabsGroup = document.getElementById('tabsGroup');
-        tabsGroup.innerHTML = '';
+        document.getElementById('tabsGroup').innerHTML = '';
         const wrapper = document.getElementById('tablesWrapper');
         wrapper.innerHTML = '';
 
@@ -475,15 +539,8 @@
             const btn = document.createElement('button');
             btn.className = `tab-btn ${sheetName === activeTab ? 'active' : ''}`;
             btn.innerText = sheetName;
-            btn.onclick = () => {
-                activeTab = sheetName;
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.table-container').forEach(c => c.classList.remove('active'));
-                document.getElementById('tab-' + sheetName.replace(/\s/g, '')).classList.add('active');
-                updateKpisForTab(sheetName);
-            };
-            tabsGroup.appendChild(btn);
+            btn.onclick = () => { switchTab(sheetName); };
+            document.getElementById('tabsGroup').appendChild(btn);
 
             let container = document.createElement('div');
             container.className = `table-container ${sheetName === activeTab ? 'active' : ''}`;
@@ -545,8 +602,22 @@
             container.innerHTML = tbHtml;
             wrapper.appendChild(container);
         }
-
         updateKpisForTab(activeTab);
+    }
+
+    function switchTab(sheetName) {
+        activeTab = sheetName;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Localiza e ativa o botão correto
+        const buttons = document.querySelectorAll('.tab-btn');
+        for(let b of buttons) { if(b.innerText === sheetName) b.classList.add('active'); }
+
+        document.querySelectorAll('.table-container').forEach(c => c.classList.remove('active'));
+        const tabEl = document.getElementById('tab-' + sheetName.replace(/\s/g, ''));
+        if (tabEl) tabEl.classList.add('active');
+        
+        updateKpisForTab(sheetName);
+        filterTable();
     }
 
     function updateKpisForTab(tabName) {
@@ -574,9 +645,18 @@
     }
 
     function openDriverModal(code) {
-        const r = masterData[activeTab].find(x => String(x.codigo) === String(code));
-        if (!r) return;
+        const r = masterData[activeTab] ? masterData[activeTab].find(x => String(x.codigo) === String(code)) : null;
+        if (!r) {
+            // Tenta buscar no geral
+            let rGeral = masterData["Geral Consolidado"] ? masterData["Geral Consolidado"].find(x => String(x.codigo) === String(code)) : null;
+            if(!rGeral) return;
+            renderModalData(rGeral);
+        } else {
+            renderModalData(r);
+        }
+    }
 
+    function renderModalData(r) {
         document.getElementById('modalDriverName').innerText = r.nome;
         document.getElementById('modalDriverCode').innerText = `Código: ${r.codigo} | Grupo: ${r.grupo}`;
 
