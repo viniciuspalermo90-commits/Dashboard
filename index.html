@@ -253,7 +253,7 @@
 <script>
     // ================= CONFIGURAÇÃO DO GITHUB =================
     const githubRepo = "viniciuspalermo90-commits/Dashboard"; 
-    const branch = "master"; 
+    const branch = "main"; 
     
     const fileNames = [
         "Base Motoristas.xlsx",
@@ -270,9 +270,103 @@
     let validCPFs = {}; // Mapeia CPF -> Código Motorista
 
     window.addEventListener('DOMContentLoaded', () => {
-        syncFromGithub();
-        document.getElementById("cpfInput").addEventListener("keypress", function(e) { if (e.key === "Enter") loginMotorista(); });
-        document.getElementById("adminSenha").addEventListener("keypress", function(e) { if (e.key === "Enter") loginAdmin(); });
+        async function syncFromGithub() {
+        let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
+
+        try {
+            for (const fileName of fileNames) {
+                // Caminho relativo seguro (com encode para garantir que espaços no nome não quebrem a URL)
+                const url = './' + encodeURIComponent(fileName);
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn(`Arquivo não encontrado no Vercel/GitHub: ${fileName}`);
+                    continue; 
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
+                
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let headerIdx = -1;
+                    let type = "";
+
+                    for (let i = 0; i < Math.min(15, aoa.length); i++) {
+                        if (!aoa[i]) continue;
+                        let rowStr = aoa[i].join(" ").toLowerCase();
+                        if (rowStr.includes("codigo") && (rowStr.includes("habilitacao") || rowStr.includes("cpf"))) { headerIdx = i; type = "BASE"; break; }
+                        if (rowStr.includes("devolvido") && rowStr.includes("pdv")) { headerIdx = i; type = "DEV"; break; }
+                        if (rowStr.includes("dispersão")) { headerIdx = i; type = "KM"; break; }
+                        if (rowStr.includes("avaliações") && rowStr.includes("rating")) { headerIdx = i; type = "PMR"; break; }
+                        if (rowStr.includes("cod pdv") && rowStr.includes("cidade")) { headerIdx = i; type = "PR"; break; }
+                        if (rowStr.includes("probabilidade de recomendar")) { headerIdx = i; type = "NPS"; break; }
+                    }
+
+                    if (headerIdx !== -1) {
+                        const json = XLSX.utils.sheet_to_json(worksheet, { range: headerIdx, defval: "-" });
+                        
+                        json.forEach(r => {
+                            if (type === "BASE") {
+                                let c = getVal(r, ['Codigo', 'Código']);
+                                let cpf = getVal(r, ['CPF']);
+                                if(c) {
+                                    baseMap[String(c).trim()] = r;
+                                    if(cpf && cpf !== '-') {
+                                        let limpo = String(cpf).replace(/\D/g, ''); 
+                                        validCPFs[limpo] = String(c).trim();
+                                    }
+                                }
+                            } else if (type === "DEV") {
+                                let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']);
+                                if(c) devMap[String(c).trim()] = r;
+                            } else if (type === "KM") {
+                                let c = getVal(r, ['Motorista', 'Codigo']);
+                                if(c) kmMap[String(c).trim()] = r;
+                            } else if (type === "PMR") {
+                                let c = getVal(r, ['Código', 'Codigo']);
+                                if(c) pmrMap[String(c).trim()] = r;
+                            } else if (type === "PR") {
+                                let c = getVal(r, ['Codigo', 'Código']);
+                                let city = getVal(r, ['Cidade']);
+                                if(c && city && city !== '-') {
+                                    let cStr = String(c).trim();
+                                    if(!citiesMap[cStr]) citiesMap[cStr] = new Set();
+                                    citiesMap[cStr].add(String(city).trim().toUpperCase());
+                                }
+                            } else if (type === "NPS") {
+                                let city = getVal(r, ['Cidade']);
+                                let prob = getVal(r, ['Probabilidade de Recomendar']);
+                                if(city && city !== '-' && prob && prob !== '-') {
+                                    let cityStr = String(city).trim().toUpperCase();
+                                    let pStr = String(prob).trim().toLowerCase();
+                                    if(!npsMap[cityStr]) npsMap[cityStr] = { P: 0, D: 0, R: 0 };
+                                    npsMap[cityStr].R += 1;
+                                    if(pStr === 'promotor') npsMap[cityStr].P += 1;
+                                    if(pStr === 'detrator') npsMap[cityStr].D += 1;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            if (Object.keys(baseMap).length > 0) {
+                executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
+                document.getElementById('loginLoading').style.display = 'none';
+                document.getElementById('loginFormMotorista').style.display = 'block';
+            } else {
+                document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro: Nenhuma Base de Motoristas válida foi encontrada.</span>`;
+            }
+
+        } catch (error) {
+            console.error(error);
+            // AGORA ELE VAI MOSTRAR O ERRO TÉCNICO EXATO NA TELA!
+            document.getElementById('loginLoading').innerHTML = `<span style='color:red; font-size:12px;'>ERRO TÉCNICO DETECTADO:<br>${error.message}</span>`;
+        }
+    }
     });
 
     function toggleLogin(tipo) {
