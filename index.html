@@ -164,7 +164,7 @@
         <strong>Modo Administrador:</strong> <br>
         1. Ranking Geral unifica <strong>somente motoristas SD 1 e SD 2</strong>.<br>
         2. Motoristas de <strong>SD 3</strong> não aparecem no Geral, apenas em sua própria aba.<br>
-        3. Clique em qualquer motorista para abrir a Ficha Detalhada (A validade da CNH foi oculta por padrão).
+        3. Clique em qualquer motorista para abrir a Ficha Detalhada.
     </div>
 
     <div class="kpi-grid" id="kpiGrid" style="display: grid;">
@@ -299,7 +299,6 @@
 
         try {
             for (const fileName of fileNames) {
-                // NOVA ROTA: Busca direto na própria pasta do site
                 const url = './' + encodeURIComponent(fileName);
                 
                 const response = await fetch(url);
@@ -387,7 +386,6 @@
 
         } catch (error) {
             console.error(error);
-            // Dedo-duro: Mostra o erro técnico exato na tela
             document.getElementById('loginLoading').innerHTML = `<span style='color:red; font-size:13px;'>ERRO TÉCNICO DETECTADO:<br>${error.message}</span>`;
         }
     }
@@ -395,7 +393,6 @@
     // ================= ROTINAS DE LOGIN =================
     function loginAdmin() {
         const senha = document.getElementById('adminSenha').value;
-        // Senha do Administrador Definida Aqui 👇
         if (senha === "admin123") {
             document.getElementById('loginWrapper').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
@@ -409,7 +406,6 @@
 
     function loginMotorista() {
         const inputCpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
-        
         if (inputCpf === "") return;
 
         if (validCPFs[inputCpf]) {
@@ -511,25 +507,29 @@
             });
             let r_nps = (totR > 0) ? ((totP - totD) / totR) * 100 : NaN;
 
+            // ============================================
+            // CORREÇÃO DO ERRO PT_R AQUI!
+            // ============================================
             let pts = 0; let metas = 0;
+            let pt_r = 0, pt_d = 0, pt_n = 0, pt_k = 0;
             
             if (!isNaN(r_rating)) {
-                let pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0));
+                pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0));
                 pts += pt_r;
                 if (r_rating >= META_RATING) metas++;
             }
             if (!isNaN(r_dev)) {
-                let pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0));
+                pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0));
                 pts += pt_d;
                 if (r_dev <= META_DEV) metas++;
             }
             if (!isNaN(r_nps)) {
-                let pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0));
+                pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0));
                 pts += pt_n;
                 if (r_nps >= META_NPS) metas++;
             }
             if (!isNaN(r_disp)) {
-                let pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0));
+                pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0));
                 pts += pt_k;
                 if (r_disp <= META_DISP) metas++;
             }
