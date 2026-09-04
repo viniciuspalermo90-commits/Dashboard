@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Motorista — Dashboard Operacional</title>
-    <!-- SheetJS CDN -->
+    <title>Portal Operacional — Logística</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -49,10 +48,9 @@
         .btn-login:hover { background: var(--primary-dark); }
         .login-loading { font-size: 14px; color: var(--primary-light); font-weight: bold; margin-bottom: 20px; }
         .error-msg { color: #dc2626; font-size: 13px; margin-top: 10px; display: none; }
+        .login-toggle { margin-top: 20px; font-size: 12px; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
 
-        /* ================= DASHBOARD ================= */
-        #dashboardMain { display: none; } /* Oculto inicialmente */
-
+        /* ================= GERAL / COMPONENTES ================= */
         header {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
             color: #ffffff; padding: 28px 32px; border-radius: 14px; box-shadow: var(--shadow-md); margin-bottom: 24px;
@@ -60,8 +58,6 @@
         }
         header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
         header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
-
-        .sync-card { display: none; } /* Ocultado pois o sync é no login agora */
         
         .rules-card { background: #fffbeb; border-left: 5px solid var(--accent-gold); padding: 18px 24px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; }
         .rules-card strong { color: #9a3412; }
@@ -74,13 +70,17 @@
         .kpi-card.highlight .kpi-val { color: #b45309; }
         .kpi-sub { font-size: 12px; color: var(--text-muted); }
 
+        .btn-export { background: #2e7d32; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-logout { background: #dc2626; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        /* ================= DASHBOARD ADMIN ================= */
+        #adminDashboard { display: none; }
         .controls-panel { background: var(--card-bg); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
         .tabs-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .tab-btn { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: all 0.2s ease; }
         .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 2px 6px rgba(13, 71, 161, 0.25); }
         .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .filter-group input { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; outline: none; min-width: 240px; }
-        .btn-export { background: #2e7d32; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
         .table-container { background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow-x: auto; display: none; margin-bottom: 30px; }
         .table-container.active { display: block; }
@@ -106,7 +106,15 @@
         .meta-2 { background: #fef9c3; color: #a16207; }
         .meta-1 { background: #fee2e2; color: #b91c1c; }
 
-        /* Modal Styles */
+        /* ================= DASHBOARD MOTORISTA ================= */
+        #driverDashboard { display: none; }
+        .driver-profile-card { background: var(--card-bg); border-radius: 16px; padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; }
+        .driver-metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px; margin-top: 20px; }
+        .metric-box { background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .metric-box span { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+        .metric-box strong { font-size: 18px; color: var(--text-dark); display: block; }
+
+        /* Modal Styles para Admin */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .modal-card { background: #ffffff; width: 90%; max-width: 650px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 16px; right: 16px; background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; }
@@ -123,72 +131,112 @@
 <!-- TELA DE LOGIN -->
 <div class="login-wrapper" id="loginWrapper">
     <div class="login-card">
-        <h2>Portal do Motorista</h2>
-        <p>Acesse seu painel e ranking operacional</p>
+        <h2>Portal Operacional</h2>
+        <p>Acesse seu painel de resultados</p>
         
         <div id="loginLoading" class="login-loading">
-            ⏳ Conectando e baixando dados...
+            ⏳ Sincronizando banco de dados...
         </div>
 
-        <div id="loginForm" style="display:none;">
-            <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Somente números)" autocomplete="off">
-            <button class="btn-login" onclick="fazerLogin()">Acessar Resultados</button>
-            <div id="loginError" class="error-msg">CPF não encontrado na base ou base não carregada. Tente novamente.</div>
+        <div id="loginFormMotorista" style="display:none;">
+            <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Apenas números)" autocomplete="off">
+            <button class="btn-login" onclick="loginMotorista()">Acessar Meus Resultados</button>
+            <div id="errorMotorista" class="error-msg">CPF não encontrado na base de dados.</div>
+            <div class="login-toggle" onclick="toggleLogin('ADMIN')">Sou Gestor/Administrador</div>
         </div>
-        
-        <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted);">
-            Se você for gestor, <a href="#" onclick="forcarAcessoGestor()" style="color: var(--primary);">clique aqui</a>.
+
+        <div id="loginFormAdmin" style="display:none;">
+            <input type="password" id="adminSenha" class="login-input" placeholder="Senha de Acesso" autocomplete="off">
+            <button class="btn-login" onclick="loginAdmin()">Acessar Dashboard Global</button>
+            <div id="errorAdmin" class="error-msg">Senha incorreta.</div>
+            <div class="login-toggle" onclick="toggleLogin('MOTORISTA')">Sou Motorista</div>
         </div>
     </div>
 </div>
 
-<!-- DASHBOARD PRINCIPAL -->
-<div class="container" id="dashboardMain">
+<!-- ================= VISÃO DO GESTOR (ADMIN) ================= -->
+<div class="container" id="adminDashboard">
     <header>
         <div>
-            <h1>Dashboard Operacional Unificado</h1>
-            <p>Conectado ao banco de dados via GitHub.</p>
+            <h1>Dashboard do Gestor — Visão Global</h1>
+            <p>Acesso total liberado. Visualizando operação completa cruzada via GitHub.</p>
         </div>
+        <button onclick="logout()" class="btn-logout">Sair</button>
     </header>
 
     <div class="rules-card">
-        <strong>Regras Ativas:</strong> <br>
-        1. Fórmula de Atingimento %: <code>(Real / Meta) * 100</code>.<br>
-        2. Leitura de Porcentagem: O sistema converte formatos crus (ex: 0.15) para exatos 15,00%. Zeros (0,00%) são estritamente preservados.<br>
-        3. Clique na linha de qualquer motorista para abrir o <strong>Resumo Detalhado</strong>.
+        <strong>Modo Administrador:</strong> <br>
+        Clique na linha de qualquer motorista no Ranking para abrir a Ficha Detalhada.
     </div>
 
-    <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-grid" id="kpiGrid" style="display: grid;">
         <div class="kpi-card highlight">
-            <span class="kpi-label">👑 1º Colocado Geral</span>
-            <span class="kpi-val" id="kpiTopName">-</span>
-            <span class="kpi-sub" id="kpiTopScore">-</span>
+            <span class="kpi-label">👑 1º Colocado</span>
+            <span class="kpi-val" id="admKpiTopName">-</span>
+            <span class="kpi-sub" id="admKpiTopScore">-</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Volume de Atendimentos</span>
-            <span class="kpi-val" id="kpiAtendimentos">-</span>
+            <span class="kpi-val" id="admKpiAtendimentos">-</span>
             <span class="kpi-sub">Soma das entregas e avaliações</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Total de Motoristas</span>
-            <span class="kpi-val" id="kpiTotal">-</span>
-            <span class="kpi-sub">Ativos com dados operacionais</span>
+            <span class="kpi-val" id="admKpiTotal">-</span>
+            <span class="kpi-sub">Ativos no cruzamento atual</span>
         </div>
     </div>
 
-    <div class="controls-panel" id="controlsPanel">
+    <div class="controls-panel">
         <div class="tabs-group" id="tabsGroup"></div>
         <div class="filter-group">
-            <input type="text" id="searchInput" placeholder="Filtrar por nome ou código..." onkeyup="filterTable()">
-            <button class="btn-export" onclick="exportExcel()">📥 Exportar Planilha Atual</button>
+            <input type="text" id="searchInput" placeholder="Filtrar motorista..." onkeyup="filterTable()">
+            <button class="btn-export" onclick="exportExcel()">📥 Exportar Aba Atual</button>
         </div>
     </div>
 
     <div id="tablesWrapper"></div>
 </div>
 
-<!-- Modal Pop-Up de Detalhamento -->
-<div class="modal-backdrop" id="driverModal" onclick="closeModal(event)">
+<!-- ================= VISÃO DO MOTORISTA ================= -->
+<div class="container" id="driverDashboard">
+    <header>
+        <div>
+            <h1 id="driverHeaderTitle">Olá, Motorista</h1>
+            <p>Seus resultados consolidados do período atual.</p>
+        </div>
+        <button onclick="logout()" class="btn-logout">Sair</button>
+    </header>
+
+    <div class="kpi-grid" style="display: grid;">
+        <div class="kpi-card highlight" style="border-color: var(--primary-light);">
+            <span class="kpi-label">Sua Posição (Ranking Geral)</span>
+            <span class="kpi-val" id="drvKpiPos">-</span>
+            <span class="kpi-sub">No grupo Consolidado</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Pontos Acumulados</span>
+            <span class="kpi-val" id="drvKpiPts">-</span>
+            <span class="kpi-sub">Soma das suas metas</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Metas Batidas</span>
+            <span class="kpi-val" id="drvKpiMetas">-</span>
+            <span class="kpi-sub">De 4 indicadores possíveis</span>
+        </div>
+    </div>
+
+    <div class="driver-profile-card">
+        <h2 style="color: var(--primary-dark); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">Seu Detalhamento Operacional</h2>
+        
+        <div class="modal-grid" id="driverPersonalGrid">
+            <!-- Injetado via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Pop-Up de Detalhamento para ADMIN -->
+<div class="modal-backdrop" id="adminDriverModal" onclick="closeModal(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <button class="modal-close" onclick="closeModal()">✕</button>
         <div class="modal-header">
@@ -201,7 +249,6 @@
 
 <script>
     // ================= CONFIGURAÇÃO DO GITHUB =================
-    // ⚠️ SUBSTITUA COM OS DADOS REAIS DO SEU REPOSITÓRIO
     const githubRepo = "viniciuspalermo90-commits/Dashboard"; 
     const branch = "main"; 
     
@@ -216,22 +263,38 @@
     // ==========================================================
 
     let masterData = {};
-    let activeTab = "";
-    
-    // Novo dicionário para Login: CPF limpo -> Código do Motorista
-    let validCPFs = {};
+    let activeTab = "Geral Consolidado";
+    let validCPFs = {}; // Mapeia CPF -> Código Motorista
 
     window.addEventListener('DOMContentLoaded', () => {
         syncFromGithub();
-        
-        // Adiciona atalho para logar com "Enter"
-        document.getElementById("cpfInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                fazerLogin();
-            }
-        });
+
+        // Atalhos de teclado para login
+        document.getElementById("cpfInput").addEventListener("keypress", function(e) { if (e.key === "Enter") loginMotorista(); });
+        document.getElementById("adminSenha").addEventListener("keypress", function(e) { if (e.key === "Enter") loginAdmin(); });
     });
+
+    function toggleLogin(tipo) {
+        document.getElementById('errorMotorista').style.display = 'none';
+        document.getElementById('errorAdmin').style.display = 'none';
+        
+        if (tipo === 'ADMIN') {
+            document.getElementById('loginFormMotorista').style.display = 'none';
+            document.getElementById('loginFormAdmin').style.display = 'block';
+        } else {
+            document.getElementById('loginFormAdmin').style.display = 'none';
+            document.getElementById('loginFormMotorista').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        document.getElementById('cpfInput').value = "";
+        document.getElementById('adminSenha').value = "";
+        document.getElementById('adminDashboard').style.display = 'none';
+        document.getElementById('driverDashboard').style.display = 'none';
+        document.getElementById('loginWrapper').style.display = 'flex';
+        toggleLogin('MOTORISTA');
+    }
 
     async function syncFromGithub() {
         let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
@@ -270,12 +333,11 @@
                         json.forEach(r => {
                             if (type === "BASE") {
                                 let c = getVal(r, ['Codigo', 'Código']);
-                                let cpf = getVal(r, ['CPF']); // Captura do CPF
+                                let cpf = getVal(r, ['CPF']);
                                 if(c) {
                                     baseMap[String(c).trim()] = r;
-                                    // Guarda o CPF limpo (só números) apontando para o Código do motorista
                                     if(cpf && cpf !== '-') {
-                                        let limpo = String(cpf).replace(/\D/g, '');
+                                        let limpo = String(cpf).replace(/\D/g, ''); // Tira pontos e traços
                                         validCPFs[limpo] = String(c).trim();
                                     }
                                 }
@@ -315,67 +377,62 @@
 
             if (Object.keys(baseMap).length > 0) {
                 executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
+                document.getElementById('loginLoading').style.display = 'none';
+                document.getElementById('loginFormMotorista').style.display = 'block';
+            } else {
+                document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro: Nenhuma Base de Motoristas válida encontrada no GitHub.</span>`;
             }
-            
-            // Dados prontos, libera tela de login
-            document.getElementById('loginLoading').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
 
         } catch (error) {
             console.error(error);
-            document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro de conexão: Verifique o nome do repositório no HTML.</span>`;
+            document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro de rede ao baixar planilhas do GitHub.</span>`;
         }
     }
 
-    // ================= LÓGICA DE LOGIN =================
-    function fazerLogin() {
-        let inputCpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
-        
-        if (inputCpf === "") {
-            mostrarErroLogin("Digite seu CPF.");
-            return;
+    // ================= ROTINAS DE LOGIN =================
+    function loginAdmin() {
+        const senha = document.getElementById('adminSenha').value;
+        // Senha do Administrador Definida Aqui 👇
+        if (senha === "admin123") {
+            document.getElementById('loginWrapper').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+            buildAdminViews();
+        } else {
+            const errDiv = document.getElementById('errorAdmin');
+            errDiv.style.display = 'block';
+            setTimeout(() => { errDiv.style.display = 'none'; }, 3000);
         }
+    }
 
-        // Verifica se o CPF existe no mapeamento
+    function loginMotorista() {
+        const inputCpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
+        
+        if (inputCpf === "") return;
+
         if (validCPFs[inputCpf]) {
             const codMotorista = validCPFs[inputCpf];
+            const r = masterData["Geral Consolidado"].find(x => String(x.codigo) === codMotorista);
             
-            // Esconde Login, Mostra Dashboard
-            document.getElementById('loginWrapper').style.display = 'none';
-            document.getElementById('dashboardMain').style.display = 'block';
-            
-            // Procura o motorista para abrir o Pop-up de boas vindas
-            // Vamos mudar a aba ativa caso ele seja de SD 1, SD 2 ou SD 3
-            let foundTab = "Geral Consolidado";
-            for (let [tab, rows] of Object.entries(masterData)) {
-                if (tab !== "Geral Consolidado" && rows.find(x => x.codigo === codMotorista)) {
-                    foundTab = tab;
-                }
+            if (r) {
+                document.getElementById('loginWrapper').style.display = 'none';
+                document.getElementById('driverDashboard').style.display = 'block';
+                buildDriverView(r);
+            } else {
+                mostrarErroDrv("Motorista sem dados operacionais ativos.");
             }
-            switchTab(foundTab);
-            
-            // Abre o modal do motorista automaticamente
-            setTimeout(() => { openDriverModal(codMotorista); }, 500);
-
         } else {
-            mostrarErroLogin("CPF não cadastrado na base.");
+            mostrarErroDrv("CPF não cadastrado na base.");
         }
     }
 
-    function mostrarErroLogin(msg) {
-        const errDiv = document.getElementById('loginError');
+    function mostrarErroDrv(msg) {
+        const errDiv = document.getElementById('errorMotorista');
         errDiv.innerText = msg;
         errDiv.style.display = 'block';
-        setTimeout(() => { errDiv.style.display = 'none'; }, 4000);
-    }
-
-    function forcarAcessoGestor() {
-        document.getElementById('loginWrapper').style.display = 'none';
-        document.getElementById('dashboardMain').style.display = 'block';
+        setTimeout(() => { errDiv.style.display = 'none'; }, 3500);
     }
     // ====================================================
 
-    // Utilitários Matemáticos e de Parse
     function parseNum(val) {
         if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
         let v = String(val).replace('%', '').replace(',', '.').trim();
@@ -388,9 +445,7 @@
         let isPctStr = strVal.includes('%');
         let v = parseFloat(strVal.replace('%', ''));
         if (isNaN(v)) return NaN;
-        if (!isPctStr && Math.abs(v) <= 1.0 && v !== 0) {
-            v = v * 100;
-        }
+        if (!isPctStr && Math.abs(v) <= 1.0 && v !== 0) v = v * 100;
         return v;
     }
 
@@ -412,6 +467,12 @@
             }
         }
         return undefined;
+    }
+
+    function calcAtingimento(real, meta) {
+        if (isNaN(real) || isNaN(meta) || meta === 0) return '-';
+        let val = (real / meta) * 100;
+        return val.toFixed(2).replace('.', ',') + '%';
     }
 
     function executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap) {
@@ -439,42 +500,23 @@
 
             let pts = 0; let metas = 0;
             
-            // Rating Pts
-            let pt_r = 0;
             if (!isNaN(r_rating)) {
-                if (r_rating >= 5.0) pt_r = 30;
-                else if (r_rating >= META_RATING) pt_r = 25;
-                else if (r_rating >= 4.91) pt_r = 10;
+                let pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0));
                 pts += pt_r;
                 if (r_rating >= META_RATING) metas++;
             }
-
-            // Dev Pts
-            let pt_d = 0;
             if (!isNaN(r_dev)) {
-                if (r_dev === 0) pt_d = 35;
-                else if (r_dev <= (META_DEV / 1.1)) pt_d = 30;
-                else if (r_dev <= META_DEV) pt_d = 25;
+                let pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0));
                 pts += pt_d;
                 if (r_dev <= META_DEV) metas++;
             }
-
-            // NPS Pts
-            let pt_n = 0;
             if (!isNaN(r_nps)) {
-                if (r_nps >= 97.5) pt_n = 35;
-                else if (r_nps >= 82.5) pt_n = 30;
-                else if (r_nps >= META_NPS) pt_n = 25;
+                let pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0));
                 pts += pt_n;
                 if (r_nps >= META_NPS) metas++;
             }
-
-            // Disp Pts
-            let pt_k = 0;
             if (!isNaN(r_disp)) {
-                if (r_disp <= (META_DISP * 0.7)) pt_k = 35;
-                else if (r_disp <= (META_DISP * 0.9)) pt_k = 30;
-                else if (r_disp <= META_DISP) pt_k = 25;
+                let pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0));
                 pts += pt_k;
                 if (r_disp <= META_DISP) metas++;
             }
@@ -494,10 +536,10 @@
                 atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0,
                 metas_batidas: metas,
                 
-                real_rating: r_rating, meta_rating: META_RATING, pt_r: pt_r,
-                real_dev: r_dev, meta_dev: META_DEV, pt_d: pt_d,
-                real_nps: r_nps, meta_nps: META_NPS, pt_n: pt_n,
-                real_disp: r_disp, meta_disp: META_DISP, pt_k: pt_k,
+                real_rating: r_rating, meta_rating: META_RATING,
+                real_dev: r_dev, meta_dev: META_DEV,
+                real_nps: r_nps, meta_nps: META_NPS,
+                real_disp: r_disp, meta_disp: META_DISP,
                 
                 status_base: b.status || '-',
                 cnh_validade: b.validade || '-',
@@ -519,19 +561,33 @@
             });
             masterData[k].forEach((r, idx) => r.pos = idx + 1);
         });
-
-        activeTab = "Geral Consolidado";
-        buildViews();
     }
 
-    function calcAtingimento(real, meta) {
-        if (isNaN(real) || isNaN(meta) || meta === 0) return '-';
-        let val = (real / meta) * 100;
-        return val.toFixed(2).replace('.', ',') + '%';
+    // ================= FUNÇÕES DO DASHBOARD DO MOTORISTA =================
+    function buildDriverView(r) {
+        document.getElementById('driverHeaderTitle').innerText = `Olá, ${r.nome.split(' ')[0]}`;
+        
+        let rankClass = r.pos === 1 ? 'rank-1' : (r.pos === 2 ? 'rank-2' : (r.pos === 3 ? 'rank-3' : ''));
+        document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClass}" style="width:40px; height:40px; font-size:18px;">${r.pos}</span>`;
+        document.getElementById('drvKpiPts').innerText = r.pontos_totais;
+        document.getElementById('drvKpiMetas').innerText = r.metas_batidas;
+
+        document.getElementById('driverPersonalGrid').innerHTML = `
+            <div class="modal-item"><span>Código | Supervisor</span><strong>${r.codigo} | ${r.grupo}</strong></div>
+            <div class="modal-item"><span>Status | CNH</span><strong>${r.status_base} | Validade: ${r.cnh_validade}</strong></div>
+            <div class="modal-item" style="grid-column: span 2;"><span>Cidades de Atuação</span><strong>${r.cidades || '-'}</strong></div>
+            
+            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00 (Meta: 4,94) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_rating, r.meta_rating)}</span></strong></div>
+            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)} (Meta: ${fmtPct(r.meta_dev)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_dev, r.meta_dev)}</span></strong></div>
+            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r.real_nps)} (Meta: ${fmtPct(r.meta_nps)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_nps, r.meta_nps)}</span></strong></div>
+            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r.real_disp)} (Meta: ${fmtPct(r.meta_disp)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_disp, r.meta_disp)}</span></strong></div>
+        `;
     }
 
-    function buildViews() {
-        document.getElementById('tabsGroup').innerHTML = '';
+    // ================= FUNÇÕES DO DASHBOARD DO GESTOR =================
+    function buildAdminViews() {
+        const tabsGroup = document.getElementById('tabsGroup');
+        tabsGroup.innerHTML = '';
         const wrapper = document.getElementById('tablesWrapper');
         wrapper.innerHTML = '';
 
@@ -539,8 +595,15 @@
             const btn = document.createElement('button');
             btn.className = `tab-btn ${sheetName === activeTab ? 'active' : ''}`;
             btn.innerText = sheetName;
-            btn.onclick = () => { switchTab(sheetName); };
-            document.getElementById('tabsGroup').appendChild(btn);
+            btn.onclick = () => {
+                activeTab = sheetName;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.table-container').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + sheetName.replace(/\s/g, '')).classList.add('active');
+                updateAdminKpis(sheetName);
+            };
+            tabsGroup.appendChild(btn);
 
             let container = document.createElement('div');
             container.className = `table-container ${sheetName === activeTab ? 'active' : ''}`;
@@ -551,28 +614,28 @@
                 <thead>
                     <tr>
                         <th colspan="6">Identificação e Status</th>
-                        <th colspan="3">Rating</th>
-                        <th colspan="3">Devolução PDV</th>
-                        <th colspan="3">NPS Cidades</th>
-                        <th colspan="3">Dispersão KM</th>
+                        <th colspan="2">Rating</th>
+                        <th colspan="2">Devolução PDV</th>
+                        <th colspan="2">NPS Cidades</th>
+                        <th colspan="2">Dispersão KM</th>
                     </tr>
                     <tr>
                         <th>Pos.</th><th>Código</th><th class="text-left">Motorista</th>
-                        <th>Pontos Totais</th><th>Avals.</th><th>Metas B.</th>
-                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
-                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
-                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
-                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
+                        <th>Pts Totais</th><th>Avals.</th><th>Metas B.</th>
+                        <th>Real (Meta)</th><th>% Ating.</th>
+                        <th>Real (Meta)</th><th>% Ating.</th>
+                        <th>Real (Meta)</th><th>% Ating.</th>
+                        <th>Real (Meta)</th><th>% Ating.</th>
                     </tr>
                 </thead>
-                <tbody id="body-${sheetName.replace(/\s/g, '')}">`;
+                <tbody>`;
 
             rows.forEach(r => {
                 let badgeClass = r.pos === 1 ? 'rank-1' : (r.pos === 2 ? 'rank-2' : (r.pos === 3 ? 'rank-3' : ''));
                 let cMetas = r.metas_batidas >= 3 ? 'meta-3' : (r.metas_batidas === 2 ? 'meta-2' : 'meta-1');
 
                 tbHtml += `
-                    <tr onclick="openDriverModal('${r.codigo}')">
+                    <tr onclick="openAdminModal('${r.codigo}')">
                         <td><span class="rank-badge ${badgeClass}">${r.pos}</span></td>
                         <td><strong>${r.codigo}</strong></td>
                         <td class="text-left"><strong>${r.nome}</strong></td>
@@ -582,19 +645,15 @@
                         
                         <td>${fmtNum(r.real_rating)} <span style="color:#aaa">(${fmtNum(r.meta_rating)})</span></td>
                         <td><strong>${calcAtingimento(r.real_rating, r.meta_rating)}</strong></td>
-                        <td><span class="badge-pts ${r.pt_r >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_r} pts</span></td>
                         
                         <td>${fmtPct(r.real_dev)} <span style="color:#aaa">(${fmtPct(r.meta_dev)})</span></td>
                         <td><strong>${calcAtingimento(r.real_dev, r.meta_dev)}</strong></td>
-                        <td><span class="badge-pts ${r.pt_d >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_d} pts</span></td>
                         
                         <td>${fmtPct(r.real_nps)} <span style="color:#aaa">(${fmtPct(r.meta_nps)})</span></td>
                         <td><strong>${calcAtingimento(r.real_nps, r.meta_nps)}</strong></td>
-                        <td><span class="badge-pts ${r.pt_n >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_n} pts</span></td>
                         
                         <td>${fmtPct(r.real_disp)} <span style="color:#aaa">(${fmtPct(r.meta_disp)})</span></td>
                         <td><strong>${calcAtingimento(r.real_disp, r.meta_disp)}</strong></td>
-                        <td><span class="badge-pts ${r.pt_k >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_k} pts</span></td>
                     </tr>
                 `;
             });
@@ -602,35 +661,20 @@
             container.innerHTML = tbHtml;
             wrapper.appendChild(container);
         }
-        updateKpisForTab(activeTab);
+        updateAdminKpis(activeTab);
     }
 
-    function switchTab(sheetName) {
-        activeTab = sheetName;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        // Localiza e ativa o botão correto
-        const buttons = document.querySelectorAll('.tab-btn');
-        for(let b of buttons) { if(b.innerText === sheetName) b.classList.add('active'); }
-
-        document.querySelectorAll('.table-container').forEach(c => c.classList.remove('active'));
-        const tabEl = document.getElementById('tab-' + sheetName.replace(/\s/g, ''));
-        if (tabEl) tabEl.classList.add('active');
-        
-        updateKpisForTab(sheetName);
-        filterTable();
-    }
-
-    function updateKpisForTab(tabName) {
+    function updateAdminKpis(tabName) {
         const data = masterData[tabName];
         if (!data || data.length === 0) return;
 
         let totAtend = 0;
         data.forEach(x => totAtend += x.atend_vol);
 
-        document.getElementById('kpiTopName').innerText = `1º ${data[0].nome}`;
-        document.getElementById('kpiTopScore').innerHTML = `<strong>${data[0].pontos_totais} pts</strong> (${data[0].atend_vol} avaliações)`;
-        document.getElementById('kpiTotal').innerText = data.length;
-        document.getElementById('kpiAtendimentos').innerText = totAtend;
+        document.getElementById('admKpiTopName').innerText = `1º ${data[0].nome}`;
+        document.getElementById('admKpiTopScore').innerHTML = `<strong>${data[0].pontos_totais} pts</strong> (${data[0].atend_vol} avaliações)`;
+        document.getElementById('admKpiTotal').innerText = data.length;
+        document.getElementById('admKpiAtendimentos').innerText = totAtend;
     }
 
     function filterTable() {
@@ -644,44 +688,29 @@
         });
     }
 
-    function openDriverModal(code) {
-        const r = masterData[activeTab] ? masterData[activeTab].find(x => String(x.codigo) === String(code)) : null;
-        if (!r) {
-            // Tenta buscar no geral
-            let rGeral = masterData["Geral Consolidado"] ? masterData["Geral Consolidado"].find(x => String(x.codigo) === String(code)) : null;
-            if(!rGeral) return;
-            renderModalData(rGeral);
-        } else {
-            renderModalData(r);
-        }
-    }
+    function openAdminModal(code) {
+        const r = masterData[activeTab].find(x => String(x.codigo) === String(code));
+        if (!r) return;
 
-    function renderModalData(r) {
         document.getElementById('modalDriverName').innerText = r.nome;
         document.getElementById('modalDriverCode').innerText = `Código: ${r.codigo} | Grupo: ${r.grupo}`;
 
         document.getElementById('modalGrid').innerHTML = `
             <div class="modal-item"><span>Pontuação Geral</span><strong>${r.pontos_totais} Pontos (${r.metas_batidas} Metas)</strong></div>
             <div class="modal-item"><span>Atendimentos / Avaliações</span><strong>${r.atend_vol} Entregas</strong></div>
-            
-            <div class="modal-item"><span>Status na Base (Ativo)</span><strong>${r.status_base || '-'}</strong></div>
-            <div class="modal-item"><span>Validade CNH</span><strong>${r.cnh_validade || '-'}</strong></div>
-            
             <div class="modal-item" style="grid-column: span 2;"><span>Cidades Atendidas</span><strong>${r.cidades || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas (Cruzado)</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
-
-            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00 (Ating: ${calcAtingimento(r.real_rating, r.meta_rating)})</strong></div>
-            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)} (Ating: ${calcAtingimento(r.real_dev, r.meta_dev)})</strong></div>
-            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r.real_nps)} (Ating: ${calcAtingimento(r.real_nps, r.meta_nps)})</strong></div>
-            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r.real_disp)} (Ating: ${calcAtingimento(r.real_disp, r.meta_disp)})</strong></div>
+            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
+            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00</strong></div>
+            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)}</strong></div>
+            <div class="modal-item"><span>Calculado NPSM</span><strong>${fmtPct(r.real_nps)}</strong></div>
+            <div class="modal-item"><span>Real Dispersão</span><strong>${fmtPct(r.real_disp)}</strong></div>
         `;
-
-        document.getElementById('driverModal').style.display = 'flex';
+        document.getElementById('adminDriverModal').style.display = 'flex';
     }
 
     function closeModal(e) {
-        if (!e || e.target === document.getElementById('driverModal') || e.target.className === 'modal-close') {
-            document.getElementById('driverModal').style.display = 'none';
+        if (!e || e.target === document.getElementById('adminDriverModal') || e.target.className === 'modal-close') {
+            document.getElementById('adminDriverModal').style.display = 'none';
         }
     }
 
@@ -692,16 +721,16 @@
             "Pontos Totais": r.pontos_totais, "Avaliações/Entregas": r.atend_vol, "Metas Batidas": r.metas_batidas,
             
             "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating),
-            "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating), "Pts Rating": r.pt_r,
+            "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating),
             
             "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev),
-            "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev), "Pts Dev": r.pt_d,
+            "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev),
             
             "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps),
-            "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps), "Pts NPS": r.pt_n,
+            "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps),
 
             "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp),
-            "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp), "Pts Disp": r.pt_k
+            "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp)
         }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportArr), activeTab);
