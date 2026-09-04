@@ -13,6 +13,8 @@
             --primary-light: #3b82f6;
             --primary-dark: #1e3a8a;
             --accent-gold: #f59e0b;
+            --success: #10b981;
+            --success-dark: #059669;
             --bg-light: #f3f4f6;
             --card-bg: #ffffff;
             --text-dark: #111827;
@@ -79,18 +81,24 @@
         
         .rules-card { background: #eff6ff; border-left: 4px solid var(--primary-light); padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 14px; color: #1e3a8a; }
         
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .kpi-card { background: var(--card-bg); padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
         .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         .kpi-card.highlight { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); border: none; }
+        .kpi-card.success-highlight { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border: none; }
         .kpi-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
         .kpi-val { font-size: 28px; font-weight: 800; color: var(--primary-dark); display: block; margin: 8px 0; }
+        
         .kpi-card.highlight .kpi-val { color: #854d0e; }
         .kpi-card.highlight .kpi-label, .kpi-card.highlight .kpi-sub { color: #a16207; }
+        
+        .kpi-card.success-highlight .kpi-val { color: #166534; }
+        .kpi-card.success-highlight .kpi-label, .kpi-card.success-highlight .kpi-sub { color: #15803d; }
+        
         .kpi-sub { font-size: 13px; color: var(--text-muted); }
 
-        .btn-export { background: #10b981; color: #ffffff; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-        .btn-export:hover { background: #059669; }
+        .btn-export { background: var(--success); color: #ffffff; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .btn-export:hover { background: var(--success-dark); }
         .btn-logout { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
         .btn-logout:hover { background: #fee2e2; }
 
@@ -129,13 +137,12 @@
         .rank-2 { background: #e2e8f0; color: #334155; border: 2px solid #cbd5e1; }
         .rank-3 { background: #fed7aa; color: #9a3412; border: 2px solid #fdba74; }
 
-        .badge-pts { font-weight: 700; padding: 4px 10px; border-radius: 100px; font-size: 12px; }
-        .pts-high { background: #dcfce7; color: #166534; }
-        .pts-zero { background: #fee2e2; color: #991b1b; }
         .meta-count { display: inline-block; padding: 4px 12px; border-radius: 100px; font-weight: 800; font-size: 12px; }
         .meta-3 { background: #dcfce7; color: #15803d; }
         .meta-2 { background: #fef9c3; color: #a16207; }
         .meta-1 { background: #fee2e2; color: #b91c1c; }
+
+        .money-badge { font-weight: 800; color: #059669; background: #dcfce7; padding: 6px 12px; border-radius: 8px; border: 1px solid #bbf7d0; font-size: 13px; }
 
         /* ================= DASHBOARD MOTORISTA E MODAIS ================= */
         #driverDashboard { display: none; }
@@ -149,18 +156,23 @@
         .modal-header h2 { color: var(--text-dark); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
         
         .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px; }
-        .modal-item { background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; transition: 0.2s; }
-        .modal-item span { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
-        .modal-item strong { font-size: 15px; color: var(--text-dark); display: block; font-weight: 600; }
+        .modal-item { background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; transition: 0.2s; position: relative; overflow: hidden; }
+        
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+        .item-header span { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .item-val { font-size: 14px; font-weight: 800; }
+        
+        .modal-item strong { font-size: 15px; color: var(--text-dark); display: block; font-weight: 600; margin-top: 4px; }
 
-        /* DESTAQUE DE METAS BATIDAS (HIGHLIGHT) */
+        /* DESTAQUE DE METAS BATIDAS E VALORES */
         .modal-item.meta-achieved {
             background: #f0fdf4 !important; 
             border-color: #86efac !important;
-            box-shadow: 0 2px 4px rgba(22, 101, 52, 0.05);
+            box-shadow: 0 4px 6px rgba(22, 101, 52, 0.05);
         }
-        .modal-item.meta-achieved span { color: #166534 !important; }
-        .modal-item.meta-achieved strong { color: #14532d !important; }
+        .modal-item.meta-achieved .item-header { border-color: #bbf7d0; }
+        .modal-item.meta-achieved .item-header span { color: #166534 !important; }
+        .modal-item.meta-achieved .item-val { color: #15803d !important; }
 
         /* ================= MEDIA QUERIES (MOBILE) ================= */
         @media (max-width: 768px) {
@@ -168,7 +180,9 @@
             header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
             .btn-logout { width: 100%; text-align: center; }
             
-            .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+            .kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .kpi-grid > div:last-child { grid-column: span 2; } /* Card do Dinheiro ocupa as 2 colunas no celular */
+            
             .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
             .filter-group { flex-direction: column; width: 100%; }
             .filter-group input { width: 100%; min-width: auto; }
@@ -181,7 +195,6 @@
             .modal-grid { grid-template-columns: 1fr; } 
             
             td { padding: 12px 10px; font-size: 13px; }
-            
             .driver-profile-card { padding: 20px; }
         }
     </style>
@@ -192,7 +205,7 @@
 <div class="login-wrapper" id="loginWrapper">
     <div class="login-card">
         <h2>Portal Operacional</h2>
-        <p>Acesse seu painel de resultados</p>
+        <p>Acesse seu painel de resultados e incentivos</p>
         
         <div id="loginLoading" class="login-loading">
             ⏳ Sincronizando banco de dados...
@@ -219,25 +232,25 @@
     <header>
         <div>
             <h1>Dashboard do Gestor</h1>
-            <p>Visão global consolidada. Arraste a tabela para os lados no celular.</p>
+            <p>Visão global consolidada com projeção de incentivos financeiros.</p>
         </div>
         <button onclick="logout()" class="btn-logout">Sair do Sistema</button>
     </header>
 
     <div class="rules-card">
-        <strong>Modo Administrador:</strong> O Ranking Geral unifica <strong>somente motoristas SD 1 e SD 2</strong>. Motoristas de <strong>SD 3</strong> ficam na aba exclusiva. Clique em qualquer linha para abrir a ficha completa do motorista.
+        <strong>Regras Atualizadas (Ambev):</strong> Rating (Meta >= 4,95). Devolução (Meta <= 2,20%). Dispersão KM (Meta <= 10%). NPS (Meta >= 75%).
     </div>
 
-    <div class="kpi-grid" id="kpiGrid" style="display: grid;">
+    <div class="kpi-grid" id="kpiGrid" style="display: grid; grid-template-columns: repeat(3, 1fr);">
         <div class="kpi-card highlight">
-            <span class="kpi-label">👑 1º Colocado (Geral SD1 e SD2)</span>
+            <span class="kpi-label">👑 1º Colocado (Geral)</span>
             <span class="kpi-val" id="admKpiTopName">-</span>
             <span class="kpi-sub" id="admKpiTopScore">-</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Volume de Atendimentos</span>
             <span class="kpi-val" id="admKpiAtendimentos">-</span>
-            <span class="kpi-sub">Soma das entregas e avaliações</span>
+            <span class="kpi-sub">Soma das entregas</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Total de Motoristas</span>
@@ -250,7 +263,7 @@
         <div class="tabs-group" id="tabsGroup"></div>
         <div class="filter-group">
             <input type="text" id="searchInput" placeholder="Buscar por motorista ou código..." onkeyup="filterTable()">
-            <button class="btn-export" onclick="exportExcel()">📥 Exportar Excel</button>
+            <button class="btn-export" onclick="exportExcel()">📥 Exportar para Folha (Excel)</button>
         </div>
     </div>
 
@@ -279,19 +292,19 @@
             <span class="kpi-sub">Geral (SD 1 e SD 2)</span>
         </div>
         <div class="kpi-card">
-            <span class="kpi-label">Pontos Acumulados</span>
-            <span class="kpi-val" id="drvKpiPts">-</span>
-            <span class="kpi-sub">Soma das suas metas</span>
-        </div>
-        <div class="kpi-card">
             <span class="kpi-label">Metas Batidas</span>
             <span class="kpi-val" id="drvKpiMetas">-</span>
             <span class="kpi-sub">De 4 indicadores possíveis</span>
         </div>
+        <div class="kpi-card success-highlight">
+            <span class="kpi-label">Incentivo Projetado</span>
+            <span class="kpi-val" id="drvKpiValor">-</span>
+            <span class="kpi-sub">Valor Total a Receber</span>
+        </div>
     </div>
 
     <div class="driver-profile-card">
-        <h2 style="color: var(--text-dark); border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; font-weight: 800;">Detalhamento de Performance</h2>
+        <h2 style="color: var(--text-dark); border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; font-weight: 800;">Meu Extrato de Metas</h2>
         <div class="modal-grid" id="driverPersonalGrid">
             <!-- Injetado via JS -->
         </div>
@@ -335,7 +348,6 @@
     function toggleLogin(tipo) {
         document.getElementById('errorMotorista').style.display = 'none';
         document.getElementById('errorAdmin').style.display = 'none';
-        
         if (tipo === 'ADMIN') {
             document.getElementById('loginFormMotorista').style.display = 'none';
             document.getElementById('loginFormAdmin').style.display = 'block';
@@ -476,6 +488,7 @@
         setTimeout(() => { errDiv.style.display = 'none'; }, 3500);
     }
 
+    // Funções Matemáticas e Formatações
     function parseNum(val) {
         if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
         return parseFloat(String(val).replace('%', '').replace(',', '.').trim());
@@ -492,6 +505,7 @@
 
     function fmtPct(num) { return (isNaN(num) || num == null) ? '-' : num.toFixed(2).replace('.', ',') + '%'; }
     function fmtNum(num) { return (isNaN(num) || num == null) ? '-' : num.toFixed(2).replace('.', ','); }
+    function fmtMoney(num) { return (isNaN(num) || num == null) ? '-' : 'R$ ' + num.toFixed(2).replace('.', ','); }
 
     function getVal(obj, keys) {
         const lowerKeys = keys.map(k => k.toLowerCase());
@@ -503,9 +517,14 @@
 
     function calcAtingimento(real, meta) { return (isNaN(real) || isNaN(meta) || meta === 0) ? '-' : ((real / meta) * 100).toFixed(2).replace('.', ',') + '%'; }
 
+    // O MOTOR DE CRUZAMENTO E REGRAS FINANCEIRAS
     function executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap) {
         let consolidados = [];
-        const META_RATING = 4.94, META_DEV = 2.45, META_NPS = 75.00;
+        
+        // Novas Metas Atualizadas (Ambev)
+        const META_RATING = 4.95; 
+        const META_DEV = 2.20; 
+        const META_NPS = 75.00;
         
         for (const [code, b] of Object.entries(baseMap)) {
             const dev = devMap[code] || {}; const km = kmMap[code] || {}; const pmr = pmrMap[code] || {};
@@ -522,12 +541,30 @@
             let r_nps = (totR > 0) ? ((totP - totD) / totR) * 100 : NaN;
 
             let pts = 0; let metas = 0;
-            let pt_r = 0, pt_d = 0, pt_n = 0, pt_k = 0;
+            let val_r = 0, val_d = 0, val_n = 0, val_k = 0;
             
-            if (!isNaN(r_rating)) { pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0)); pts += pt_r; if (r_rating >= META_RATING) metas++; }
-            if (!isNaN(r_dev)) { pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0)); pts += pt_d; if (r_dev <= META_DEV) metas++; }
-            if (!isNaN(r_nps)) { pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0)); pts += pt_n; if (r_nps >= META_NPS) metas++; }
-            if (!isNaN(r_disp)) { pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0)); pts += pt_k; if (r_disp <= META_DISP) metas++; }
+            // Rating: >= 4.95 ganha R$ 160
+            if (!isNaN(r_rating)) { 
+                pts += (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0)); 
+                if (r_rating >= META_RATING) { metas++; val_r = 160.00; } 
+            }
+            // Devolução: <= 2.20% ganha R$ 160
+            if (!isNaN(r_dev)) { 
+                pts += (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0)); 
+                if (r_dev <= META_DEV) { metas++; val_d = 160.00; } 
+            }
+            // NPS: >= 75% ganha R$ 320
+            if (!isNaN(r_nps)) { 
+                pts += (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0)); 
+                if (r_nps >= META_NPS) { metas++; val_n = 320.00; } 
+            }
+            // Dispersão: <= Meta ganha R$ 160
+            if (!isNaN(r_disp)) { 
+                pts += (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0)); 
+                if (r_disp <= META_DISP) { metas++; val_k = 160.00; } 
+            }
+
+            let valor_total = val_r + val_d + val_n + val_k;
 
             let sheetGrupo = "Outros";
             if (sup.includes('1')) sheetGrupo = "SD 1";
@@ -539,10 +576,13 @@
             consolidados.push({
                 codigo: code, nome: getVal(b, ['Nome', 'Nome Motorista']) || '-', grupo: sheetGrupo,
                 pontos_totais: pts, atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0, metas_batidas: metas,
-                real_rating: r_rating, meta_rating: META_RATING, pt_r: pt_r,
-                real_dev: r_dev, meta_dev: META_DEV, pt_d: pt_d,
-                real_nps: r_nps, meta_nps: META_NPS, pt_n: pt_n,
-                real_disp: r_disp, meta_disp: META_DISP, pt_k: pt_k,
+                
+                real_rating: r_rating, meta_rating: META_RATING, val_r: val_r,
+                real_dev: r_dev, meta_dev: META_DEV, val_d: val_d,
+                real_nps: r_nps, meta_nps: META_NPS, val_n: val_n,
+                real_disp: r_disp, meta_disp: META_DISP, val_k: val_k,
+                
+                valor_total: valor_total,
                 status_base: b.status || '-', cidades: driverCities.join(', ') || '-', tot_p: totP, tot_d: totD, tot_r: totR
             });
         }
@@ -560,6 +600,7 @@
         });
     }
 
+    // ================= EXIBIÇÃO DO DASHBOARD DO MOTORISTA =================
     function buildDriverView(r_grupo, r_geral) {
         document.getElementById('driverHeaderTitle').innerText = `Olá, ${r_grupo.nome.split(' ')[0]}`;
         
@@ -574,38 +615,47 @@
             document.getElementById('drvKpiGeral').innerHTML = `<span style="font-size: 24px; font-weight: bold; color: var(--text-muted);">-</span>`;
         }
 
-        document.getElementById('drvKpiPts').innerText = r_grupo.pontos_totais;
-        document.getElementById('drvKpiMetas').innerText = r_grupo.metas_batidas;
+        document.getElementById('drvKpiMetas').innerText = `${r_grupo.metas_batidas} / 4`;
+        document.getElementById('drvKpiValor').innerText = fmtMoney(r_grupo.valor_total);
 
-        // VERIFICAÇÃO DE METAS BATIDAS
+        // Verificação se a meta foi batida para aplicar os Highlights
         const hitRating = (r_grupo.real_rating >= r_grupo.meta_rating) ? 'meta-achieved' : '';
         const hitDev = (r_grupo.real_dev <= r_grupo.meta_dev) ? 'meta-achieved' : '';
         const hitNps = (r_grupo.real_nps >= r_grupo.meta_nps) ? 'meta-achieved' : '';
         const hitDisp = (r_grupo.real_disp <= r_grupo.meta_disp) ? 'meta-achieved' : '';
 
-        const iconRating = (r_grupo.real_rating >= r_grupo.meta_rating) ? '✅ ' : '';
-        const iconDev = (r_grupo.real_dev <= r_grupo.meta_dev) ? '✅ ' : '';
-        const iconNps = (r_grupo.real_nps >= r_grupo.meta_nps) ? '✅ ' : '';
-        const iconDisp = (r_grupo.real_disp <= r_grupo.meta_disp) ? '✅ ' : '';
-
-        const colorRating = hitRating ? '#166534' : 'var(--primary)';
-        const colorDev = hitDev ? '#166534' : 'var(--primary)';
-        const colorNps = hitNps ? '#166534' : 'var(--primary)';
-        const colorDisp = hitDisp ? '#166534' : 'var(--primary)';
+        const iconRating = hitRating ? '✅ ' : '❌ ';
+        const iconDev = hitDev ? '✅ ' : '❌ ';
+        const iconNps = hitNps ? '✅ ' : '❌ ';
+        const iconDisp = hitDisp ? '✅ ' : '❌ ';
 
         document.getElementById('driverPersonalGrid').innerHTML = `
-            <div class="modal-item"><span>Código | Supervisor</span><strong>${r_grupo.codigo} | ${r_grupo.grupo}</strong></div>
-            <div class="modal-item"><span>Status na Base</span><strong>${r_grupo.status_base || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 1 / -1;"><span>Cidades Atendidas</span><strong>${r_grupo.cidades || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 1 / -1;"><span>NPS Respostas (Cruzado)</span><strong>${r_grupo.tot_p || 0} Promotores / ${r_grupo.tot_d || 0} Detratores / ${r_grupo.tot_r || 0} Total</strong></div>
+            <div class="modal-item" style="grid-column: span 1 / -1;">
+                <div class="item-header"><span>Código | Supervisor</span><span class="item-val">${r_grupo.codigo} | ${r_grupo.grupo}</span></div>
+                <div class="item-header"><span>Cidades Atendidas</span><span class="item-val">${r_grupo.cidades || '-'}</span></div>
+                <div class="item-header" style="border:none; margin:0; padding:0;"><span>NPS Respostas</span><span class="item-val">${r_grupo.tot_p || 0} Prom. / ${r_grupo.tot_d || 0} Detr. / ${r_grupo.tot_r || 0} Tot.</span></div>
+            </div>
             
-            <div class="modal-item ${hitRating}"><span>${iconRating}Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:${colorRating}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
-            <div class="modal-item ${hitDev}"><span>${iconDev}Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:${colorDev}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
-            <div class="modal-item ${hitNps}"><span>${iconNps}Calculado NPSM</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:${colorNps}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
-            <div class="modal-item ${hitDisp}"><span>${iconDisp}Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:${colorDisp}; font-size:13px; font-weight:700;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
+            <div class="modal-item ${hitRating}">
+                <div class="item-header"><span>${iconRating} Rating (Meta >= ${fmtNum(r_grupo.meta_rating)})</span><span class="item-val">+ ${fmtMoney(r_grupo.val_r)}</span></div>
+                <strong>Realizado: ${fmtNum(r_grupo.real_rating)} / 5,00</strong>
+            </div>
+            <div class="modal-item ${hitDev}">
+                <div class="item-header"><span>${iconDev} Devolução (Meta <= ${fmtPct(r_grupo.meta_dev)})</span><span class="item-val">+ ${fmtMoney(r_grupo.val_d)}</span></div>
+                <strong>Realizado: ${fmtPct(r_grupo.real_dev)}</strong>
+            </div>
+            <div class="modal-item ${hitNps}">
+                <div class="item-header"><span>${iconNps} NPS (Meta > ${fmtPct(r_grupo.meta_nps)})</span><span class="item-val">+ ${fmtMoney(r_grupo.val_n)}</span></div>
+                <strong>Realizado: ${fmtPct(r_grupo.real_nps)}</strong>
+            </div>
+            <div class="modal-item ${hitDisp}">
+                <div class="item-header"><span>${iconDisp} Dispersão (Meta <= ${fmtPct(r_grupo.meta_disp)})</span><span class="item-val">+ ${fmtMoney(r_grupo.val_k)}</span></div>
+                <strong>Realizado: ${fmtPct(r_grupo.real_disp)}</strong>
+            </div>
         `;
     }
 
+    // ================= EXIBIÇÃO DO DASHBOARD DO ADMIN =================
     function buildAdminViews() {
         const tabsGroup = document.getElementById('tabsGroup');
         tabsGroup.innerHTML = '';
@@ -634,7 +684,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th colspan="6">Identificação e Status</th>
+                        <th colspan="7">Identificação e Status</th>
                         <th colspan="2">Rating</th>
                         <th colspan="2">Devolução PDV</th>
                         <th colspan="2">NPS Cidades</th>
@@ -642,7 +692,7 @@
                     </tr>
                     <tr>
                         <th>Pos.</th><th>Código</th><th class="text-left">Motorista</th>
-                        <th>Pts Totais</th><th>Avals.</th><th>Metas B.</th>
+                        <th>Pts Totais</th><th>Avals.</th><th>Metas B.</th><th>Incentivo (R$)</th>
                         <th>Real (Meta)</th><th>% Ating.</th>
                         <th>Real (Meta)</th><th>% Ating.</th>
                         <th>Real (Meta)</th><th>% Ating.</th>
@@ -660,9 +710,10 @@
                         <td><span class="rank-badge ${badgeClass}">${r.pos}</span></td>
                         <td><strong>${r.codigo}</strong></td>
                         <td class="text-left"><strong>${r.nome}</strong></td>
-                        <td><span class="points-badge">${r.pontos_totais} pts</span></td>
+                        <td><strong>${r.pontos_totais}</strong></td>
                         <td style="${r.pos===1 ? 'font-weight:bold;color:#b45309;' : ''}">${r.atend_vol}</td>
                         <td><span class="meta-count ${cMetas}">${r.metas_batidas} / 4</span></td>
+                        <td><span class="money-badge">${fmtMoney(r.valor_total)}</span></td>
                         
                         <td>${fmtNum(r.real_rating)} <span style="color:#aaa; font-size: 11px;">(${fmtNum(r.meta_rating)})</span></td>
                         <td><strong>${calcAtingimento(r.real_rating, r.meta_rating)}</strong></td>
@@ -690,7 +741,7 @@
         if (!data || data.length === 0) return;
         let totAtend = 0; data.forEach(x => totAtend += x.atend_vol);
         document.getElementById('admKpiTopName').innerText = `1º ${data[0].nome}`;
-        document.getElementById('admKpiTopScore').innerHTML = `<strong>${data[0].pontos_totais} pts</strong> (${data[0].atend_vol} avaliações)`;
+        document.getElementById('admKpiTopScore').innerHTML = `<strong>${fmtMoney(data[0].valor_total)}</strong> (${data[0].metas_batidas} Metas)`;
         document.getElementById('admKpiTotal').innerText = data.length;
         document.getElementById('admKpiAtendimentos').innerText = totAtend;
     }
@@ -713,10 +764,9 @@
         document.getElementById('modalDriverName').innerText = r.nome;
         document.getElementById('modalDriverCode').innerText = `Código: ${r.codigo} | Grupo: ${r.grupo}`;
         document.getElementById('modalGrid').innerHTML = `
-            <div class="modal-item"><span>Pontuação Geral</span><strong>${r.pontos_totais} Pts (${r.metas_batidas} Metas)</strong></div>
-            <div class="modal-item"><span>Avaliações / Entregas</span><strong>${r.atend_vol}</strong></div>
+            <div class="modal-item"><span>Valor Projetado (R$)</span><strong style="color:var(--success-dark); font-size:18px;">${fmtMoney(r.valor_total)}</strong></div>
+            <div class="modal-item"><span>Metas Batidas</span><strong>${r.metas_batidas} de 4</strong></div>
             <div class="modal-item" style="grid-column: span 1 / -1;"><span>Cidades Atendidas</span><strong>${r.cidades || '-'}</strong></div>
-            <div class="modal-item" style="grid-column: span 1 / -1;"><span>NPS Respostas</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
             <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00</strong></div>
             <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)}</strong></div>
             <div class="modal-item"><span>Calculado NPSM</span><strong>${fmtPct(r.real_nps)}</strong></div>
@@ -735,16 +785,17 @@
         if (!masterData[activeTab]) return alert("Sem dados.");
         const exportArr = masterData[activeTab].map(r => ({
             "Posição": r.pos, "Código": r.codigo, "Nome": r.nome, "Grupo": r.grupo,
-            "Pontos Totais": r.pontos_totais, "Avaliações/Entregas": r.atend_vol, "Metas Batidas": r.metas_batidas,
-            "Status Base": r.status_base, "Cidades Atendidas": r.cidades,
-            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating), "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating),
-            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev), "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev),
-            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps), "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps),
-            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp), "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp)
+            "Incentivo Total (R$)": r.valor_total, "Metas Batidas": r.metas_batidas, "Pontos Totais": r.pontos_totais, 
+            "Avaliações": r.atend_vol, "Cidades Atendidas": r.cidades,
+            
+            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating), "R$ Rating": r.val_r,
+            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev), "R$ Devolução": r.val_d,
+            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps), "R$ NPS": r.val_n,
+            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp), "R$ Dispersão": r.val_k
         }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportArr), activeTab);
-        XLSX.writeFile(wb, `Export_${activeTab.replace(/\s/g, '_')}.xlsx`);
+        XLSX.writeFile(wb, `Fechamento_Incentivos_${activeTab.replace(/\s/g, '_')}.xlsx`);
     }
 </script>
 </body>
