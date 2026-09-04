@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Inteligente — Nuvem (GitHub Sync)</title>
+    <!-- SheetJS CDN para processar o Excel em memória -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #0d47a1;
+            --primary-light: #1976d2;
+            --primary-dark: #0a2540;
+            --accent-gold: #fbbf24;
+            --bg-light: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-dark); padding: 24px; line-height: 1.5; }
+        .container { max-width: 1440px; margin: 0 auto; }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
+            color: #ffffff; padding: 28px 32px; border-radius: 14px; box-shadow: var(--shadow-md); margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+        }
+        header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+        header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+
+        /* Sync Card */
+        .sync-card {
+            background: var(--card-bg); border-left: 5px solid var(--primary-light); border-radius: 12px; padding: 20px 30px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: var(--shadow-sm);
+        }
+        .sync-info h3 { font-size: 18px; color: var(--primary-dark); margin-bottom: 4px; }
+        .sync-info p { font-size: 13px; color: var(--text-muted); }
+        .btn-sync { background: var(--primary-light); color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .btn-sync:hover { background: var(--primary); }
+
+        .rules-card { background: #fffbeb; border-left: 5px solid var(--accent-gold); padding: 18px 24px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; }
+        .rules-card strong { color: #9a3412; }
+
+        .kpi-grid { display: none; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
+        .kpi-card.highlight { border-color: #fef08a; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
+        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .kpi-val { font-size: 24px; font-weight: 800; color: var(--primary); display: block; margin: 6px 0; }
+        .kpi-card.highlight .kpi-val { color: #b45309; }
+        .kpi-sub { font-size: 12px; color: var(--text-muted); }
+
+        .controls-panel { background: var(--card-bg); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .tabs-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tab-btn { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: all 0.2s ease; }
+        .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 2px 6px rgba(13, 71, 161, 0.25); }
+        .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .filter-group input { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; outline: none; min-width: 240px; }
+        .btn-export { background: #2e7d32; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        .table-container { background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow-x: auto; display: none; margin-bottom: 30px; }
+        .table-container.active { display: block; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; white-space: nowrap; }
+        thead tr:nth-child(1) th { background-color: var(--primary-dark); color: #ffffff; padding: 10px 8px; text-transform: uppercase; }
+        thead tr:nth-child(2) th { background-color: var(--primary-light); color: #ffffff; padding: 10px 8px; }
+        tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.15s; }
+        tbody tr:nth-child(even) { background-color: #f9fafb; }
+        tbody tr:hover { background-color: #eff6ff; }
+        td { padding: 10px 12px; vertical-align: middle; }
+        .text-left { text-align: left; }
+        
+        .rank-badge { font-weight: 700; font-size: 13px; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #eef2f7; }
+        .rank-1 { background: #fef08a; color: #854d0e; border: 2px solid #eab308; }
+        .rank-2 { background: #e2e8f0; color: #334155; }
+        .rank-3 { background: #fed7aa; color: #9a3412; }
+
+        .badge-pts { font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .pts-high { background: #dcfce7; color: #166534; }
+        .pts-zero { background: #fee2e2; color: #991b1b; }
+        .meta-count { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; }
+        .meta-3 { background: #dcfce7; color: #15803d; }
+        .meta-2 { background: #fef9c3; color: #a16207; }
+        .meta-1 { background: #fee2e2; color: #b91c1c; }
+
+        .loading-state { text-align: center; padding: 50px 20px; font-size: 16px; font-weight: bold; color: var(--primary); display: none; }
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border-color); }
+
+        /* Modal Styles */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .modal-card { background: #ffffff; width: 90%; max-width: 650px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; }
+        .modal-header { border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
+        .modal-header h2 { color: var(--primary); font-size: 20px; margin-bottom: 4px; }
+        .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px; }
+        .modal-item { background: #f9fafb; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .modal-item span { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;}
+        .modal-item strong { font-size: 14px; color: var(--text-dark); display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Dashboard Unificado em Nuvem</h1>
+            <p>Conectado ao repositório GitHub da operação. Atualizações automáticas processadas via API.</p>
+        </div>
+    </header>
+
+    <div class="sync-card">
+        <div class="sync-info">
+            <h3>🔄 Status de Sincronização</h3>
+            <p id="syncStatusText">Conectando ao banco de planilhas na nuvem...</p>
+        </div>
+        <button class="btn-sync" onclick="syncFromGithub()">Sincronizar Agora</button>
+    </div>
+
+    <div class="rules-card">
+        <strong>Correções Ativas no Sistema:</strong> <br>
+        1. Fórmula de Atingimento %: <code>(Real / Meta) * 100</code>.<br>
+        2. Leitura de Porcentagem: O motor lê formatos cruzados (0.15) e converte para exatos 15,00%. Zeros (0,00%) são estritamente preservados.<br>
+        3. Ficha Individual: Clique na linha do motorista no Ranking para abrir o <strong>Pop-up</strong> com todas as informações detalhadas.
+    </div>
+
+    <!-- Loading Spinner / Message -->
+    <div class="loading-state" id="loadingState">
+        ⏳ Baixando e cruzando arquivos do GitHub. Por favor, aguarde...
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card highlight">
+            <span class="kpi-label">👑 1º Colocado Geral</span>
+            <span class="kpi-val" id="kpiTopName">-</span>
+            <span class="kpi-sub" id="kpiTopScore">-</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Volume de Atendimentos</span>
+            <span class="kpi-val" id="kpiAtendimentos">-</span>
+            <span class="kpi-sub">Soma das entregas e avaliações</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Total de Motoristas</span>
+            <span class="kpi-val" id="kpiTotal">-</span>
+            <span class="kpi-sub">Lidos da Base de Cadastro</span>
+        </div>
+    </div>
+
+    <div class="controls-panel" id="controlsPanel">
+        <div class="tabs-group" id="tabsGroup"></div>
+        <div class="filter-group">
+            <input type="text" id="searchInput" placeholder="Buscar motorista..." onkeyup="filterTable()">
+            <button class="btn-export" onclick="exportExcel()">📥 Exportar Aba Atual (.xlsx)</button>
+        </div>
+    </div>
+
+    <div id="tablesWrapper">
+        <div class="empty-state" id="emptyState">Nenhum dado cruzado ainda. Sincronize com o repositório.</div>
+    </div>
+</div>
+
+<!-- Modal Pop-Up de Detalhamento do Motorista -->
+<div class="modal-backdrop" id="driverModal" onclick="closeModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-header">
+            <h2 id="modalDriverName">Nome do Motorista</h2>
+            <p id="modalDriverCode" style="font-size: 12px; color: var(--text-muted);">Código: - | Grupo: -</p>
+        </div>
+        <div class="modal-grid" id="modalGrid"></div>
+    </div>
+</div>
+
+<script>
+    // ================= CONFIGURAÇÃO DO GITHUB =================
+    const githubRepo = "viniciuspalermo90-commits/Dashboard"; 
+    const branch = "main"; // Altere para "master" se a branch principal do seu repositório for master
+    
+    const fileNames = [
+        "Base Motoristas.xlsx",
+        "Devolução.xlsx",
+        "Dispersão KM por Motorista.xlsx",
+        "NPS.xlsx",
+        "Planificador Motorista Rating.xlsx",
+        "Planificador Rating.xlsx"
+    ];
+    // ==========================================================
+
+    let masterData = {};
+    let activeTab = "";
+
+    // Iniciar auto-sync ao abrir a página
+    window.addEventListener('DOMContentLoaded', () => {
+        syncFromGithub();
+    });
+
+    async function syncFromGithub() {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('kpiGrid').style.display = 'none';
+        document.getElementById('controlsPanel').style.display = 'none';
+        document.getElementById('tablesWrapper').innerHTML = '';
+        document.getElementById('syncStatusText').innerText = "Baixando arquivos da nuvem...";
+
+        let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
+
+        try {
+            for (const fileName of fileNames) {
+                const url = `https://raw.githubusercontent.com/${githubRepo}/${branch}/${encodeURIComponent(fileName)}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn(`Arquivo não encontrado ou erro HTTP: ${fileName}`);
+                    continue; 
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
+                
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let headerIdx = -1;
+                    let type = "";
+
+                    // Scanner de cabeçalho
+                    for (let i = 0; i < Math.min(15, aoa.length); i++) {
+                        if (!aoa[i]) continue;
+                        let rowStr = aoa[i].join(" ").toLowerCase();
+
+                        if (rowStr.includes("codigo") && (rowStr.includes("habilitacao") || rowStr.includes("cpf"))) { headerIdx = i; type = "BASE"; break; }
+                        if (rowStr.includes("devolvido") && rowStr.includes("pdv")) { headerIdx = i; type = "DEV"; break; }
+                        if (rowStr.includes("dispersão")) { headerIdx = i; type = "KM"; break; }
+                        if (rowStr.includes("avaliações") && rowStr.includes("rating")) { headerIdx = i; type = "PMR"; break; }
+                        if (rowStr.includes("cod pdv") && rowStr.includes("cidade")) { headerIdx = i; type = "PR"; break; }
+                        if (rowStr.includes("probabilidade de recomendar")) { headerIdx = i; type = "NPS"; break; }
+                    }
+
+                    if (headerIdx !== -1) {
+                        const json = XLSX.utils.sheet_to_json(worksheet, { range: headerIdx, defval: "-" });
+                        
+                        json.forEach(r => {
+                            if (type === "BASE") {
+                                let c = getVal(r, ['Codigo', 'Código']);
+                                if(c) baseMap[String(c).trim()] = r;
+                            } else if (type === "DEV") {
+                                let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']);
+                                if(c) devMap[String(c).trim()] = r;
+                            } else if (type === "KM") {
+                                let c = getVal(r, ['Motorista', 'Codigo']);
+                                if(c) kmMap[String(c).trim()] = r;
+                            } else if (type === "PMR") {
+                                let c = getVal(r, ['Código', 'Codigo']);
+                                if(c) pmrMap[String(c).trim()] = r;
+                            } else if (type === "PR") {
+                                let c = getVal(r, ['Codigo', 'Código']);
+                                let city = getVal(r, ['Cidade']);
+                                if(c && city && city !== '-') {
+                                    let cStr = String(c).trim();
+                                    if(!citiesMap[cStr]) citiesMap[cStr] = new Set();
+                                    citiesMap[cStr].add(String(city).trim().toUpperCase());
+                                }
+                            } else if (type === "NPS") {
+                                let city = getVal(r, ['Cidade']);
+                                let prob = getVal(r, ['Probabilidade de Recomendar']);
+                                if(city && city !== '-' && prob && prob !== '-') {
+                                    let cityStr = String(city).trim().toUpperCase();
+                                    let pStr = String(prob).trim().toLowerCase();
+                                    if(!npsMap[cityStr]) npsMap[cityStr] = { P: 0, D: 0, R: 0 };
+                                    npsMap[cityStr].R += 1;
+                                    if(pStr === 'promotor') npsMap[cityStr].P += 1;
+                                    if(pStr === 'detrator') npsMap[cityStr].D += 1;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            if (Object.keys(baseMap).length === 0) {
+                document.getElementById('syncStatusText').innerHTML = "<span style='color:red;'>Nenhuma Base de Motoristas encontrada no GitHub. Verifique as configurações.</span>";
+                document.getElementById('loadingState').style.display = 'none';
+                return;
+            }
+
+            executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
+            
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('syncStatusText').innerHTML = "<span style='color:green;'>Sincronizado com sucesso! Dados atualizados.</span>";
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('syncStatusText').innerHTML = `<span style='color:red;'>Erro de conexão: ${error.message}</span>`;
+            document.getElementById('loadingState').style.display = 'none';
+        }
+    }
+
+    // Utilitários Matemáticos e de Parse
+    function parseNum(val) {
+        if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
+        let v = String(val).replace('%', '').replace(',', '.').trim();
+        return parseFloat(v);
+    }
+
+    function parsePct(val) {
+        if (val === undefined || val === null || val === '-' || String(val).trim() === '') return NaN;
+        let strVal = String(val).trim().replace(',', '.');
+        let isPctStr = strVal.includes('%');
+        let v = parseFloat(strVal.replace('%', ''));
+        if (isNaN(v)) return NaN;
+        if (!isPctStr && Math.abs(v) <= 1.0 && v !== 0) {
+            v = v * 100;
+        }
+        return v;
+    }
+
+    function fmtPct(num) {
+        if (isNaN(num) || num === undefined || num === null) return '-';
+        return num.toFixed(2).replace('.', ',') + '%';
+    }
+
+    function fmtNum(num) {
+        if (isNaN(num) || num === undefined || num === null) return '-';
+        return num.toFixed(2).replace('.', ',');
+    }
+
+    function getVal(obj, keys) {
+        const lowerKeys = keys.map(k => k.toLowerCase());
+        for (let k of Object.keys(obj)) {
+            if (lowerKeys.includes(k.trim().toLowerCase())) {
+                if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '-' && obj[k] !== '') return obj[k];
+            }
+        }
+        return undefined;
+    }
+
+    function executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap) {
+        let consolidados = [];
+        const META_RATING = 4.94, META_DEV = 2.45, META_NPS = 75.00;
+        
+        for (const [code, b] of Object.entries(baseMap)) {
+            const dev = devMap[code] || {};
+            const km = kmMap[code] || {};
+            const pmr = pmrMap[code] || {};
+
+            let sup = String(getVal(b, ['Supervisor Rota', 'Supervisor']) || '0').trim();
+            let META_DISP = (sup.includes('1')) ? 10.00 : 20.00;
+
+            let r_rating = parseNum(getVal(pmr, ['Rating']));
+            let r_dev = parsePct(getVal(dev, ['% Devolução PDV', 'Devolvido %', 'Devolução']));
+            let r_disp = parsePct(getVal(km, ['% Dispersão', 'Dispersão KM']));
+
+            const driverCities = citiesMap[code] ? Array.from(citiesMap[code]) : [];
+            let totP = 0, totD = 0, totR = 0;
+            driverCities.forEach(c => {
+                if (npsMap[c]) { totP += npsMap[c].P; totD += npsMap[c].D; totR += npsMap[c].R; }
+            });
+            let r_nps = (totR > 0) ? ((totP - totD) / totR) * 100 : NaN;
+
+            let pts = 0; let metas = 0;
+            
+            // Rating Pts
+            let pt_r = 0;
+            if (!isNaN(r_rating)) {
+                if (r_rating >= 5.0) pt_r = 30;
+                else if (r_rating >= META_RATING) pt_r = 25;
+                else if (r_rating >= 4.91) pt_r = 10;
+                pts += pt_r;
+                if (r_rating >= META_RATING) metas++;
+            }
+
+            // Dev Pts
+            let pt_d = 0;
+            if (!isNaN(r_dev)) {
+                if (r_dev === 0) pt_d = 35;
+                else if (r_dev <= (META_DEV / 1.1)) pt_d = 30;
+                else if (r_dev <= META_DEV) pt_d = 25;
+                pts += pt_d;
+                if (r_dev <= META_DEV) metas++;
+            }
+
+            // NPS Pts
+            let pt_n = 0;
+            if (!isNaN(r_nps)) {
+                if (r_nps >= 97.5) pt_n = 35;
+                else if (r_nps >= 82.5) pt_n = 30;
+                else if (r_nps >= META_NPS) pt_n = 25;
+                pts += pt_n;
+                if (r_nps >= META_NPS) metas++;
+            }
+
+            // Disp Pts
+            let pt_k = 0;
+            if (!isNaN(r_disp)) {
+                if (r_disp <= (META_DISP * 0.7)) pt_k = 35;
+                else if (r_disp <= (META_DISP * 0.9)) pt_k = 30;
+                else if (r_disp <= META_DISP) pt_k = 25;
+                pts += pt_k;
+                if (r_disp <= META_DISP) metas++;
+            }
+
+            let sheetGrupo = "Outros";
+            if (sup.includes('1')) sheetGrupo = "SD 1";
+            else if (sup.includes('2')) sheetGrupo = "SD 2";
+            else if (sup.includes('3')) sheetGrupo = "SD 3";
+
+            if (isNaN(r_rating) && isNaN(r_dev) && isNaN(r_disp) && driverCities.length === 0) continue;
+
+            consolidados.push({
+                codigo: code,
+                nome: getVal(b, ['Nome', 'Nome Motorista']) || '-',
+                grupo: sheetGrupo,
+                pontos_totais: pts,
+                atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0,
+                metas_batidas: metas,
+                
+                real_rating: r_rating, meta_rating: META_RATING, pt_r: pt_r,
+                real_dev: r_dev, meta_dev: META_DEV, pt_d: pt_d,
+                real_nps: r_nps, meta_nps: META_NPS, pt_n: pt_n,
+                real_disp: r_disp, meta_disp: META_DISP, pt_k: pt_k,
+                
+                status_base: b.status || '-',
+                cnh_validade: b.validade || '-',
+                cidades: driverCities.join(', ') || '-',
+                tot_p: totP, tot_d: totD, tot_r: totR
+            });
+        }
+
+        masterData = { "Geral Consolidado": [...consolidados] };
+        masterData["SD 1"] = consolidados.filter(x => x.grupo === "SD 1");
+        masterData["SD 2"] = consolidados.filter(x => x.grupo === "SD 2");
+        masterData["SD 3"] = consolidados.filter(x => x.grupo === "SD 3");
+
+        Object.keys(masterData).forEach(k => {
+            if(masterData[k].length === 0) { delete masterData[k]; return; }
+            masterData[k].sort((a, b) => {
+                if (b.pontos_totais !== a.pontos_totais) return b.pontos_totais - a.pontos_totais;
+                return b.atend_vol - a.atend_vol;
+            });
+            masterData[k].forEach((r, idx) => r.pos = idx + 1);
+        });
+
+        activeTab = "Geral Consolidado";
+        buildViews();
+    }
+
+    function calcAtingimento(real, meta) {
+        if (isNaN(real) || isNaN(meta) || meta === 0) return '-';
+        let val = (real / meta) * 100;
+        return val.toFixed(2).replace('.', ',') + '%';
+    }
+
+    function buildViews() {
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('kpiGrid').style.display = 'grid';
+        document.getElementById('controlsPanel').style.display = 'flex';
+
+        const tabsGroup = document.getElementById('tabsGroup');
+        tabsGroup.innerHTML = '';
+        const wrapper = document.getElementById('tablesWrapper');
+        wrapper.innerHTML = '';
+
+        for (const [sheetName, rows] of Object.entries(masterData)) {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${sheetName === activeTab ? 'active' : ''}`;
+            btn.innerText = sheetName;
+            btn.onclick = () => {
+                activeTab = sheetName;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.table-container').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + sheetName.replace(/\s/g, '')).classList.add('active');
+                updateKpisForTab(sheetName);
+            };
+            tabsGroup.appendChild(btn);
+
+            let container = document.createElement('div');
+            container.className = `table-container ${sheetName === activeTab ? 'active' : ''}`;
+            container.id = 'tab-' + sheetName.replace(/\s/g, '');
+
+            let tbHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="6">Identificação e Status</th>
+                        <th colspan="3">Rating</th>
+                        <th colspan="3">Devolução PDV</th>
+                        <th colspan="3">NPS Cidades</th>
+                        <th colspan="3">Dispersão KM</th>
+                    </tr>
+                    <tr>
+                        <th>Pos.</th><th>Código</th><th class="text-left">Motorista</th>
+                        <th>Pontos Totais</th><th>Avals.</th><th>Metas B.</th>
+                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
+                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
+                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
+                        <th>Real (Meta)</th><th>% Ating.</th><th>Pts</th>
+                    </tr>
+                </thead>
+                <tbody id="body-${sheetName.replace(/\s/g, '')}">`;
+
+            rows.forEach(r => {
+                let badgeClass = r.pos === 1 ? 'rank-1' : (r.pos === 2 ? 'rank-2' : (r.pos === 3 ? 'rank-3' : ''));
+                let cMetas = r.metas_batidas >= 3 ? 'meta-3' : (r.metas_batidas === 2 ? 'meta-2' : 'meta-1');
+
+                tbHtml += `
+                    <tr onclick="openDriverModal('${r.codigo}')">
+                        <td><span class="rank-badge ${badgeClass}">${r.pos}</span></td>
+                        <td><strong>${r.codigo}</strong></td>
+                        <td class="text-left"><strong>${r.nome}</strong></td>
+                        <td><span class="points-badge">${r.pontos_totais}</span></td>
+                        <td style="${r.pos===1 ? 'font-weight:bold;color:#b45309;' : ''}">${r.atend_vol}</td>
+                        <td><span class="meta-count ${cMetas}">${r.metas_batidas}</span></td>
+                        
+                        <td>${fmtNum(r.real_rating)} <span style="color:#aaa">(${fmtNum(r.meta_rating)})</span></td>
+                        <td><strong>${calcAtingimento(r.real_rating, r.meta_rating)}</strong></td>
+                        <td><span class="badge-pts ${r.pt_r >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_r} pts</span></td>
+                        
+                        <td>${fmtPct(r.real_dev)} <span style="color:#aaa">(${fmtPct(r.meta_dev)})</span></td>
+                        <td><strong>${calcAtingimento(r.real_dev, r.meta_dev)}</strong></td>
+                        <td><span class="badge-pts ${r.pt_d >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_d} pts</span></td>
+                        
+                        <td>${fmtPct(r.real_nps)} <span style="color:#aaa">(${fmtPct(r.meta_nps)})</span></td>
+                        <td><strong>${calcAtingimento(r.real_nps, r.meta_nps)}</strong></td>
+                        <td><span class="badge-pts ${r.pt_n >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_n} pts</span></td>
+                        
+                        <td>${fmtPct(r.real_disp)} <span style="color:#aaa">(${fmtPct(r.meta_disp)})</span></td>
+                        <td><strong>${calcAtingimento(r.real_disp, r.meta_disp)}</strong></td>
+                        <td><span class="badge-pts ${r.pt_k >= 25 ? 'pts-high' : 'pts-zero'}">${r.pt_k} pts</span></td>
+                    </tr>
+                `;
+            });
+            tbHtml += `</tbody></table>`;
+            container.innerHTML = tbHtml;
+            wrapper.appendChild(container);
+        }
+
+        updateKpisForTab(activeTab);
+    }
+
+    function updateKpisForTab(tabName) {
+        const data = masterData[tabName];
+        if (!data || data.length === 0) return;
+
+        let totAtend = 0;
+        data.forEach(x => totAtend += x.atend_vol);
+
+        document.getElementById('kpiTopName').innerText = `1º ${data[0].nome}`;
+        document.getElementById('kpiTopScore').innerHTML = `<strong>${data[0].pontos_totais} pts</strong> (${data[0].atend_vol} avaliações)`;
+        document.getElementById('kpiTotal').innerText = data.length;
+        document.getElementById('kpiAtendimentos').innerText = totAtend;
+    }
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const activeContainer = document.querySelector('.table-container.active');
+        if (!activeContainer) return;
+
+        const rows = activeContainer.querySelectorAll('tbody tr');
+        rows.forEach(tr => {
+            tr.style.display = tr.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+
+    function openDriverModal(code) {
+        const r = masterData[activeTab].find(x => String(x.codigo) === String(code));
+        if (!r) return;
+
+        document.getElementById('modalDriverName').innerText = r.nome;
+        document.getElementById('modalDriverCode').innerText = `Código: ${r.codigo} | Grupo: ${r.grupo}`;
+
+        document.getElementById('modalGrid').innerHTML = `
+            <div class="modal-item"><span>Pontuação Geral</span><strong>${r.pontos_totais} Pontos (${r.metas_batidas} Metas)</strong></div>
+            <div class="modal-item"><span>Atendimentos / Avaliações</span><strong>${r.atend_vol} Entregas</strong></div>
+            
+            <div class="modal-item"><span>Status na Base (Ativo)</span><strong>${r.status_base || '-'}</strong></div>
+            <div class="modal-item"><span>Validade CNH</span><strong>${r.cnh_validade || '-'}</strong></div>
+            
+            <div class="modal-item" style="grid-column: span 2;"><span>Cidades Atendidas</span><strong>${r.cidades || '-'}</strong></div>
+            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas (Cruzado)</span><strong>${r.tot_p || 0} Promotores / ${r.tot_d || 0} Detratores / ${r.tot_r || 0} Total</strong></div>
+
+            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00 (Ating: ${calcAtingimento(r.real_rating, r.meta_rating)})</strong></div>
+            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)} (Ating: ${calcAtingimento(r.real_dev, r.meta_dev)})</strong></div>
+            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r.real_nps)} (Ating: ${calcAtingimento(r.real_nps, r.meta_nps)})</strong></div>
+            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r.real_disp)} (Ating: ${calcAtingimento(r.real_disp, r.meta_disp)})</strong></div>
+        `;
+
+        document.getElementById('driverModal').style.display = 'flex';
+    }
+
+    function closeModal(e) {
+        if (!e || e.target === document.getElementById('driverModal') || e.target.className === 'modal-close') {
+            document.getElementById('driverModal').style.display = 'none';
+        }
+    }
+
+    function exportExcel() {
+        if (!masterData[activeTab]) return alert("Sem dados.");
+        const exportArr = masterData[activeTab].map(r => ({
+            "Posição": r.pos, "Código": r.codigo, "Nome": r.nome, "Grupo": r.grupo,
+            "Pontos Totais": r.pontos_totais, "Avaliações/Entregas": r.atend_vol, "Metas Batidas": r.metas_batidas,
+            
+            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating),
+            "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating), "Pts Rating": r.pt_r,
+            
+            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev),
+            "% Ating. Dev": calcAtingimento(r.real_dev, r.meta_dev), "Pts Dev": r.pt_d,
+            
+            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps),
+            "% Ating. NPS": calcAtingimento(r.real_nps, r.meta_nps), "Pts NPS": r.pt_n,
+
+            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp),
+            "% Ating. Disp": calcAtingimento(r.real_disp, r.meta_disp), "Pts Disp": r.pt_k
+        }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportArr), activeTab);
+        XLSX.writeFile(wb, `Export_${activeTab.replace(/\s/g, '_')}.xlsx`);
+    }
+</script>
+</body>
+</html>
