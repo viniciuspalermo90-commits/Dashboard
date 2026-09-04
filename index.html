@@ -155,7 +155,7 @@
     <header>
         <div>
             <h1>Dashboard do Gestor — Visão Global</h1>
-            <p>Acesso total liberado. Visualizando operação completa cruzada via GitHub.</p>
+            <p>Acesso total liberado. Visualizando operação completa.</p>
         </div>
         <button onclick="logout()" class="btn-logout">Sair</button>
     </header>
@@ -251,10 +251,7 @@
 </div>
 
 <script>
-    // ================= CONFIGURAÇÃO DO GITHUB =================
-    const githubRepo = "viniciuspalermo90-commits/Dashboard"; 
-    const branch = "main"; 
-    
+    // ================= CONFIGURAÇÃO DOS ARQUIVOS =================
     const fileNames = [
         "Base Motoristas.xlsx",
         "Devolução.xlsx",
@@ -263,24 +260,51 @@
         "Planificador Motorista Rating.xlsx",
         "Planificador Rating.xlsx"
     ];
-    // ==========================================================
+    // =============================================================
 
     let masterData = {};
     let activeTab = "Geral Consolidado";
     let validCPFs = {}; // Mapeia CPF -> Código Motorista
 
     window.addEventListener('DOMContentLoaded', () => {
-        async function syncFromGithub() {
+        syncFromGithub();
+        document.getElementById("cpfInput").addEventListener("keypress", function(e) { if (e.key === "Enter") loginMotorista(); });
+        document.getElementById("adminSenha").addEventListener("keypress", function(e) { if (e.key === "Enter") loginAdmin(); });
+    });
+
+    function toggleLogin(tipo) {
+        document.getElementById('errorMotorista').style.display = 'none';
+        document.getElementById('errorAdmin').style.display = 'none';
+        
+        if (tipo === 'ADMIN') {
+            document.getElementById('loginFormMotorista').style.display = 'none';
+            document.getElementById('loginFormAdmin').style.display = 'block';
+        } else {
+            document.getElementById('loginFormAdmin').style.display = 'none';
+            document.getElementById('loginFormMotorista').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        document.getElementById('cpfInput').value = "";
+        document.getElementById('adminSenha').value = "";
+        document.getElementById('adminDashboard').style.display = 'none';
+        document.getElementById('driverDashboard').style.display = 'none';
+        document.getElementById('loginWrapper').style.display = 'flex';
+        toggleLogin('MOTORISTA');
+    }
+
+    async function syncFromGithub() {
         let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
 
         try {
             for (const fileName of fileNames) {
-                // Caminho relativo seguro (com encode para garantir que espaços no nome não quebrem a URL)
+                // NOVA ROTA: Busca direto na própria pasta do site
                 const url = './' + encodeURIComponent(fileName);
                 
                 const response = await fetch(url);
                 if (!response.ok) {
-                    console.warn(`Arquivo não encontrado no Vercel/GitHub: ${fileName}`);
+                    console.warn(`Arquivo não encontrado: ${fileName}`);
                     continue; 
                 }
                 
@@ -363,123 +387,8 @@
 
         } catch (error) {
             console.error(error);
-            // AGORA ELE VAI MOSTRAR O ERRO TÉCNICO EXATO NA TELA!
-            document.getElementById('loginLoading').innerHTML = `<span style='color:red; font-size:12px;'>ERRO TÉCNICO DETECTADO:<br>${error.message}</span>`;
-        }
-    }
-    });
-
-    function toggleLogin(tipo) {
-        document.getElementById('errorMotorista').style.display = 'none';
-        document.getElementById('errorAdmin').style.display = 'none';
-        
-        if (tipo === 'ADMIN') {
-            document.getElementById('loginFormMotorista').style.display = 'none';
-            document.getElementById('loginFormAdmin').style.display = 'block';
-        } else {
-            document.getElementById('loginFormAdmin').style.display = 'none';
-            document.getElementById('loginFormMotorista').style.display = 'block';
-        }
-    }
-
-    function logout() {
-        document.getElementById('cpfInput').value = "";
-        document.getElementById('adminSenha').value = "";
-        document.getElementById('adminDashboard').style.display = 'none';
-        document.getElementById('driverDashboard').style.display = 'none';
-        document.getElementById('loginWrapper').style.display = 'flex';
-        toggleLogin('MOTORISTA');
-    }
-
-    async function syncFromGithub() {
-        let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
-
-        try {
-            for (const fileName of fileNames) {
-                const url = `./${fileName}`;
-                const response = await fetch(url);
-                if (!response.ok) continue; 
-                
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
-                
-                workbook.SheetNames.forEach(sheetName => {
-                    const worksheet = workbook.Sheets[sheetName];
-                    const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    let headerIdx = -1;
-                    let type = "";
-
-                    for (let i = 0; i < Math.min(15, aoa.length); i++) {
-                        if (!aoa[i]) continue;
-                        let rowStr = aoa[i].join(" ").toLowerCase();
-                        if (rowStr.includes("codigo") && (rowStr.includes("habilitacao") || rowStr.includes("cpf"))) { headerIdx = i; type = "BASE"; break; }
-                        if (rowStr.includes("devolvido") && rowStr.includes("pdv")) { headerIdx = i; type = "DEV"; break; }
-                        if (rowStr.includes("dispersão")) { headerIdx = i; type = "KM"; break; }
-                        if (rowStr.includes("avaliações") && rowStr.includes("rating")) { headerIdx = i; type = "PMR"; break; }
-                        if (rowStr.includes("cod pdv") && rowStr.includes("cidade")) { headerIdx = i; type = "PR"; break; }
-                        if (rowStr.includes("probabilidade de recomendar")) { headerIdx = i; type = "NPS"; break; }
-                    }
-
-                    if (headerIdx !== -1) {
-                        const json = XLSX.utils.sheet_to_json(worksheet, { range: headerIdx, defval: "-" });
-                        
-                        json.forEach(r => {
-                            if (type === "BASE") {
-                                let c = getVal(r, ['Codigo', 'Código']);
-                                let cpf = getVal(r, ['CPF']);
-                                if(c) {
-                                    baseMap[String(c).trim()] = r;
-                                    if(cpf && cpf !== '-') {
-                                        let limpo = String(cpf).replace(/\D/g, ''); // Limpa o CPF p/ login exato
-                                        validCPFs[limpo] = String(c).trim();
-                                    }
-                                }
-                            } else if (type === "DEV") {
-                                let c = getVal(r, ['Motorista ', 'Motorista', 'Codigo']);
-                                if(c) devMap[String(c).trim()] = r;
-                            } else if (type === "KM") {
-                                let c = getVal(r, ['Motorista', 'Codigo']);
-                                if(c) kmMap[String(c).trim()] = r;
-                            } else if (type === "PMR") {
-                                let c = getVal(r, ['Código', 'Codigo']);
-                                if(c) pmrMap[String(c).trim()] = r;
-                            } else if (type === "PR") {
-                                let c = getVal(r, ['Codigo', 'Código']);
-                                let city = getVal(r, ['Cidade']);
-                                if(c && city && city !== '-') {
-                                    let cStr = String(c).trim();
-                                    if(!citiesMap[cStr]) citiesMap[cStr] = new Set();
-                                    citiesMap[cStr].add(String(city).trim().toUpperCase());
-                                }
-                            } else if (type === "NPS") {
-                                let city = getVal(r, ['Cidade']);
-                                let prob = getVal(r, ['Probabilidade de Recomendar']);
-                                if(city && city !== '-' && prob && prob !== '-') {
-                                    let cityStr = String(city).trim().toUpperCase();
-                                    let pStr = String(prob).trim().toLowerCase();
-                                    if(!npsMap[cityStr]) npsMap[cityStr] = { P: 0, D: 0, R: 0 };
-                                    npsMap[cityStr].R += 1;
-                                    if(pStr === 'promotor') npsMap[cityStr].P += 1;
-                                    if(pStr === 'detrator') npsMap[cityStr].D += 1;
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-
-            if (Object.keys(baseMap).length > 0) {
-                executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
-                document.getElementById('loginLoading').style.display = 'none';
-                document.getElementById('loginFormMotorista').style.display = 'block';
-            } else {
-                document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro: Nenhuma Base de Motoristas válida encontrada no GitHub.</span>`;
-            }
-
-        } catch (error) {
-            console.error(error);
-            document.getElementById('loginLoading').innerHTML = `<span style='color:red;'>Erro de rede ao baixar planilhas do GitHub.</span>`;
+            // Dedo-duro: Mostra o erro técnico exato na tela
+            document.getElementById('loginLoading').innerHTML = `<span style='color:red; font-size:13px;'>ERRO TÉCNICO DETECTADO:<br>${error.message}</span>`;
         }
     }
 
@@ -506,7 +415,6 @@
         if (validCPFs[inputCpf]) {
             const codMotorista = validCPFs[inputCpf];
             
-            // Localiza o motorista NO SEU GRUPO ESPECÍFICO (SD 1, SD 2 ou SD 3)
             let driverGrupoRow = null;
             for (let g of ["SD 1", "SD 2", "SD 3"]) {
                 if (masterData[g]) {
@@ -516,7 +424,6 @@
             }
             
             if (driverGrupoRow) {
-                // Tenta achar ele no Geral (lembrando que Geral = apenas SD1 e SD2)
                 let driverGeralRow = masterData["Geral Consolidado"] ? masterData["Geral Consolidado"].find(x => String(x.codigo) === codMotorista) : null;
                 
                 document.getElementById('loginWrapper').style.display = 'none';
@@ -655,7 +562,6 @@
 
         masterData = {};
         
-        // GERAL CONSOLIDADO: APENAS SD 1 E SD 2 (SD 3 é excluído daqui conforme regras)
         masterData["Geral Consolidado"] = consolidados.filter(x => x.grupo === "SD 1" || x.grupo === "SD 2");
         masterData["SD 1"] = consolidados.filter(x => x.grupo === "SD 1");
         masterData["SD 2"] = consolidados.filter(x => x.grupo === "SD 2");
@@ -667,7 +573,6 @@
                 if (b.pontos_totais !== a.pontos_totais) return b.pontos_totais - a.pontos_totais;
                 return b.atend_vol - a.atend_vol;
             });
-            // Atribui posições após o sorteio
             masterData[k].forEach((r, idx) => r.pos = idx + 1);
         });
     }
@@ -676,12 +581,10 @@
     function buildDriverView(r_grupo, r_geral) {
         document.getElementById('driverHeaderTitle').innerText = `Olá, ${r_grupo.nome.split(' ')[0]}`;
         
-        // Posição no Grupo
         let rankClassGrupo = r_grupo.pos === 1 ? 'rank-1' : (r_grupo.pos === 2 ? 'rank-2' : (r_grupo.pos === 3 ? 'rank-3' : ''));
         document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClassGrupo}" style="width:40px; height:40px; font-size:18px;">${r_grupo.pos}</span>`;
         document.getElementById('drvKpiPosSub').innerText = `No seu grupo (${r_grupo.grupo})`;
         
-        // Posição Geral (Se for de SD 3, não tem posição no geral)
         if (r_geral) {
             let rankClassGeral = r_geral.pos === 1 ? 'rank-1' : (r_geral.pos === 2 ? 'rank-2' : (r_geral.pos === 3 ? 'rank-3' : ''));
             document.getElementById('drvKpiGeral').innerHTML = `<span class="rank-badge ${rankClassGeral}" style="width:40px; height:40px; font-size:18px;">${r_geral.pos}</span>`;
