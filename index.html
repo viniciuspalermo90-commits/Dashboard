@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Portal Operacional — Logística</title>
+    
     <!-- ================= CONFIGURAÇÕES DE APP (PWA) ================= -->
     <meta name="theme-color" content="#1e3a8a">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,11 +12,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Portal">
     <meta name="apple-mobile-web-app-title" content="Portal">
-    
-    <!-- Ícone gerado via código (Caminhão Azul e Dourado) -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231e3a8a'/%3E%3Cpath d='M22 35h40v30H22zm40 10h16l8 8v12H62z' fill='%23f59e0b'/%3E%3Ccircle cx='37' cy='70' r='7' fill='%23ffffff'/%3E%3Ccircle cx='75' cy='70' r='7' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231e3a8a'/%3E%3Cpath d='M22 35h40v30H22zm40 10h16l8 8v12H62z' fill='%23f59e0b'/%3E%3Ccircle cx='37' cy='70' r='7' fill='%23ffffff'/%3E%3Ccircle cx='75' cy='70' r='7' fill='%23ffffff'/%3E%3C/svg%3E">
     <!-- ============================================================ -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -40,8 +40,8 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
-        .container { max-width: 1440px; margin: 0 auto; padding: 20px; }
+        body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; overflow-x: hidden; }
+        .container { max-width: 1440px; margin: 0 auto; padding: 20px; width: 100%; }
 
         ::-webkit-scrollbar { height: 8px; width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
@@ -72,13 +72,16 @@
         .btn-login {
             width: 100%; background: var(--primary); color: #ffffff; border: none; padding: 16px;
             border-radius: var(--radius-md); font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
-            box-shadow: 0 4px 6px rgba(29, 78, 216, 0.2);
+            box-shadow: 0 4px 6px rgba(29, 78, 216, 0.2); margin-bottom: 12px;
         }
         .btn-login:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-whatsapp { background: #25D366; color: #fff; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.2); }
+        .btn-whatsapp:hover { background: #128C7E; }
         .login-loading { font-size: 15px; color: var(--primary); font-weight: 600; margin-bottom: 20px; }
         .error-msg { color: #dc2626; font-size: 14px; font-weight: 500; margin-top: 12px; display: none; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca; }
-        .login-toggle { margin-top: 24px; font-size: 14px; color: var(--primary); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .login-toggle { margin-top: 16px; font-size: 14px; color: var(--primary); font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-block; padding: 5px; }
         .login-toggle:hover { color: var(--primary-dark); text-decoration: underline; }
+        .divider { height: 1px; background: #e5e7eb; margin: 20px 0; }
 
         /* ================= GERAL / COMPONENTES ================= */
         header {
@@ -88,7 +91,6 @@
         }
         header h1 { font-size: 24px; font-weight: 800; color: var(--text-dark); }
         header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
-        
         .rules-card { background: #eff6ff; border-left: 4px solid var(--primary-light); padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 14px; color: #1e3a8a; }
         
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -103,7 +105,7 @@
         .kpi-card.success-highlight .kpi-label, .kpi-card.success-highlight .kpi-sub { color: #15803d; }
         .kpi-sub { font-size: 13px; color: var(--text-muted); }
 
-        .btn-export { background: var(--success); color: #ffffff; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .btn-export { background: var(--success); color: #ffffff; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; gap: 8px; justify-content: center; }
         .btn-export:hover { background: var(--success-dark); }
         .btn-logout { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; font-size: 14px; }
 
@@ -113,7 +115,6 @@
         .tabs-group { display: flex; gap: 10px; flex-wrap: wrap; }
         .tab-btn { background: #f3f4f6; border: 1px solid transparent; padding: 10px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
         .tab-btn.active { background: var(--primary-dark); color: #ffffff; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); }
-        
         .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
         .filter-group input { padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 14px; outline: none; min-width: 260px; background: #f9fafb; }
 
@@ -121,9 +122,8 @@
         .table-container.active { display: block; animation: fadeIn 0.3s ease; }
         
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; white-space: nowrap; }
-        thead tr:nth-child(1) th { background-color: #f8fafc; color: var(--text-muted); padding: 12px 10px; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); }
+        thead tr:nth-child(1) th { background-color: #f8fafc; color: var(--text-muted); padding: 12px 10px; text-transform: uppercase; font-size: 11px; font-weight: 700; border-bottom: 2px solid var(--border-color); }
         thead tr:nth-child(2) th { background-color: #ffffff; color: var(--text-dark); padding: 14px 10px; font-weight: 600; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
-        
         tbody tr { cursor: pointer; transition: background 0.2s; }
         tbody tr:nth-child(even) td { background-color: #f9fafb; }
         tbody tr:nth-child(odd) td { background-color: #ffffff; }
@@ -169,33 +169,35 @@
             header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
             .btn-logout { width: 100%; text-align: center; }
             
-            #adminDashboard .kpi-grid { grid-template-columns: 1fr; }
-            #driverDashboard .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+            /* Correção do Layout das Caixas (KPIs) - Força 1 coluna no celular */
+            .kpi-grid { grid-template-columns: 1fr !important; gap: 12px; }
             
             .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
             .filter-group { flex-direction: column; width: 100%; }
             .filter-group input { width: 100%; min-width: auto; }
-            .btn-export { width: 100%; justify-content: center; }
-            .tabs-group { overflow-x: auto; padding-bottom: 8px; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .tabs-group { overflow-x: auto; padding-bottom: 8px; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; width: 100%; }
             .tab-btn { white-space: nowrap; flex-shrink: 0; }
             
             /* TABELA VIRA BLOCOS NO CELULAR */
-            .table-container { background: transparent; border: none; box-shadow: none; margin-bottom: 10px; }
-            .table-container table { width: 100%; border-collapse: collapse; }
+            .table-container { background: transparent; border: none; box-shadow: none; margin-bottom: 10px; overflow: visible; padding: 0; }
+            .table-container table { width: 100%; display: block; border-collapse: collapse; }
             .table-container thead { display: none; }
+            .table-container tbody { display: block; width: 100%; }
             .table-container tbody tr {
-                display: block; background: var(--card-bg) !important; margin-bottom: 16px;
+                display: block; width: 100%; background: var(--card-bg) !important; margin-bottom: 16px;
                 border-radius: var(--radius-lg); border: 1px solid var(--border-color);
-                box-shadow: var(--shadow-sm); padding: 12px;
+                box-shadow: var(--shadow-sm); padding: 16px; box-sizing: border-box;
             }
             .table-container tbody td {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 10px 0; border-bottom: 1px solid #f3f4f6; text-align: right !important;
+                padding: 12px 0; border-bottom: 1px solid #f3f4f6; text-align: right !important;
+                width: 100%; box-sizing: border-box;
             }
             .table-container tbody td:last-child { border-bottom: none; }
             .table-container tbody td::before {
                 content: attr(data-label); font-size: 11px; color: var(--text-muted);
                 text-transform: uppercase; font-weight: 700; text-align: left; margin-right: 16px;
+                flex-shrink: 0;
             }
 
             .modal-card { padding: 24px; }
@@ -221,14 +223,31 @@
             <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Apenas números)" autocomplete="off">
             <button class="btn-login" onclick="loginMotorista()">Acessar Meus Resultados</button>
             <div id="errorMotorista" class="error-msg">CPF não encontrado na base de dados.</div>
-            <div class="login-toggle" onclick="toggleLogin('ADMIN')">Acesso Gestor / Administrador</div>
+            
+            <div class="divider"></div>
+            <div style="margin-bottom: 12px; color: var(--text-muted); font-size: 13px;">Primeiro acesso?</div>
+            <button class="btn-login btn-whatsapp" onclick="toggleCadastro(true)">Solicitar Cadastro</button>
+            
+            <div class="login-toggle" style="margin-top: 10px;" onclick="toggleLogin('ADMIN')">Acesso Gestor / Administrador</div>
+        </div>
+
+        <!-- FORMULÁRIO DE CADASTRO (WHATSAPP REDIRECT) -->
+        <div id="loginFormCadastro" style="display:none;">
+            <h3 style="color: var(--text-dark); margin-bottom: 12px;">Liberação de Acesso</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Para acessar o portal, seu CPF precisa estar registrado na nossa Base Operacional. Clique abaixo para enviar seus dados ao Suporte.</p>
+            
+            <input type="text" id="cadastroCpf" class="login-input" placeholder="Digite seu CPF para enviar" autocomplete="off">
+            
+            <button class="btn-login btn-whatsapp" onclick="solicitarCadastro()">Enviar para o Suporte</button>
+            <div class="login-toggle" onclick="toggleCadastro(false)">Voltar para o Login</div>
         </div>
 
         <!-- FORMULÁRIO ADMIN -->
         <div id="loginFormAdmin" style="display:none;">
-            <input type="password" id="adminSenha" class="login-input" placeholder="Senha de Administrador" autocomplete="off">
+            <input type="text" id="adminUser" class="login-input" placeholder="Seu Usuário (ex: admin)" autocomplete="off">
+            <input type="password" id="adminSenha" class="login-input" placeholder="Sua Senha" autocomplete="off">
             <button class="btn-login" onclick="loginAdmin()">Acessar Dashboard Global</button>
-            <div id="errorAdmin" class="error-msg">Senha incorreta.</div>
+            <div id="errorAdmin" class="error-msg">Usuário ou senha incorretos.</div>
             <div class="login-toggle" onclick="toggleLogin('MOTORISTA')">Voltar para Acesso Motorista</div>
         </div>
     </div>
@@ -249,7 +268,7 @@
         O Ranking Geral unifica somente <strong>SD 1 e SD 2</strong>.
     </div>
 
-    <div class="kpi-grid" id="kpiGrid" style="display: grid; grid-template-columns: repeat(3, 1fr);">
+    <div class="kpi-grid" id="kpiGrid">
         <div class="kpi-card highlight">
             <span class="kpi-label">👑 1º Colocado (Geral)</span>
             <span class="kpi-val" id="admKpiTopName">-</span>
@@ -288,7 +307,7 @@
         <button onclick="logout()" class="btn-logout">Sair do Sistema</button>
     </header>
 
-    <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(3, 1fr);">
+    <div class="kpi-grid">
         <div class="kpi-card highlight" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
             <span class="kpi-label" style="color: #1e40af;">Sua Posição no Grupo</span>
             <span class="kpi-val" id="drvKpiPos" style="color: #1e3a8a;">-</span>
@@ -327,16 +346,17 @@
 </div>
 
 <script>
-    // ================= CONFIGURAÇÃO DOS ARQUIVOS =================
+    // ================= CONTAS DE GESTORES (ADMINS) =================
+    const ADMIN_USERS = {
+        "admin": { senha: "123", nome: "Administrador Geral" },
+        "gestor_sd1": { senha: "senha1", nome: "Supervisor SD 1" },
+        "roberto": { senha: "roberto123", nome: "Roberto (Gerência)" }
+    };
+
     const fileNames = [
-        "Base Motoristas.xlsx",
-        "Devolução.xlsx",
-        "Dispersão KM por Motorista.xlsx",
-        "NPS.xlsx",
-        "Planificador Motorista Rating.xlsx",
-        "Planificador Rating.xlsx"
+        "Base Motoristas.xlsx", "Devolução.xlsx", "Dispersão KM por Motorista.xlsx",
+        "NPS.xlsx", "Planificador Motorista Rating.xlsx", "Planificador Rating.xlsx"
     ];
-    // =============================================================
 
     let masterData = {};
     let activeTab = "Geral Consolidado";
@@ -351,7 +371,8 @@
     function toggleLogin(tipo) {
         document.getElementById('errorMotorista').style.display = 'none';
         document.getElementById('errorAdmin').style.display = 'none';
-        
+        document.getElementById('loginFormCadastro').style.display = 'none';
+
         if (tipo === 'ADMIN') {
             document.getElementById('loginFormMotorista').style.display = 'none';
             document.getElementById('loginFormAdmin').style.display = 'block';
@@ -361,8 +382,29 @@
         }
     }
 
+    function toggleCadastro(show) {
+        if (show) {
+            document.getElementById('loginFormMotorista').style.display = 'none';
+            document.getElementById('loginFormCadastro').style.display = 'block';
+        } else {
+            document.getElementById('loginFormCadastro').style.display = 'none';
+            document.getElementById('loginFormMotorista').style.display = 'block';
+        }
+    }
+
+    function solicitarCadastro() {
+        const cpf = document.getElementById('cadastroCpf').value.trim();
+        if(!cpf) { alert("Digite seu CPF antes de enviar."); return; }
+        const numeroSuporte = "5511999999999"; // COLOQUE AQUI O SEU NUMERO
+        const mensagem = `Olá, sou motorista e preciso solicitar a liberação do meu acesso no Portal Operacional. Meu CPF é: ${cpf}`;
+        const urlZap = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
+        window.open(urlZap, '_blank');
+        toggleCadastro(false);
+    }
+
     function logout() {
         document.getElementById('cpfInput').value = "";
+        document.getElementById('adminUser').value = "";
         document.getElementById('adminSenha').value = "";
         document.getElementById('adminDashboard').style.display = 'none';
         document.getElementById('driverDashboard').style.display = 'none';
@@ -448,10 +490,13 @@
     }
 
     function loginAdmin() {
+        const user = document.getElementById('adminUser').value.trim().toLowerCase();
         const senha = document.getElementById('adminSenha').value;
-        if (senha === "admin123") {
+        
+        if (ADMIN_USERS[user] && ADMIN_USERS[user].senha === senha) {
             document.getElementById('loginWrapper').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
+            document.getElementById('adminHeaderTitle').innerText = `Dashboard: ${ADMIN_USERS[user].nome}`;
             buildAdminViews();
         } else {
             const errDiv = document.getElementById('errorAdmin');
@@ -576,7 +621,6 @@
         });
     }
 
-    // ================= EXIBIÇÃO DO DASHBOARD DO MOTORISTA =================
     function buildDriverView(r_grupo) {
         document.getElementById('driverHeaderTitle').innerText = `Olá, ${r_grupo.nome.split(' ')[0]}`;
         
@@ -628,7 +672,6 @@
         `;
     }
 
-    // ================= EXIBIÇÃO DO DASHBOARD DO ADMIN =================
     function buildAdminViews() {
         const tabsGroup = document.getElementById('tabsGroup');
         tabsGroup.innerHTML = '';
