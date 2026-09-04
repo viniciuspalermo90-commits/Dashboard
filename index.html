@@ -109,11 +109,7 @@
         /* ================= DASHBOARD MOTORISTA ================= */
         #driverDashboard { display: none; }
         .driver-profile-card { background: var(--card-bg); border-radius: 16px; padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; }
-        .driver-metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px; margin-top: 20px; }
-        .metric-box { background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
-        .metric-box span { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
-        .metric-box strong { font-size: 18px; color: var(--text-dark); display: block; }
-
+        
         /* Modal Styles para Admin */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .modal-card { background: #ffffff; width: 90%; max-width: 650px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
@@ -166,12 +162,14 @@
 
     <div class="rules-card">
         <strong>Modo Administrador:</strong> <br>
-        Clique na linha de qualquer motorista no Ranking para abrir a Ficha Detalhada.
+        1. Ranking Geral unifica <strong>somente motoristas SD 1 e SD 2</strong>.<br>
+        2. Motoristas de <strong>SD 3</strong> não aparecem no Geral, apenas em sua própria aba.<br>
+        3. Clique em qualquer motorista para abrir a Ficha Detalhada (A validade da CNH foi oculta por padrão).
     </div>
 
     <div class="kpi-grid" id="kpiGrid" style="display: grid;">
         <div class="kpi-card highlight">
-            <span class="kpi-label">👑 1º Colocado</span>
+            <span class="kpi-label">👑 1º Colocado (Geral SD1 e SD2)</span>
             <span class="kpi-val" id="admKpiTopName">-</span>
             <span class="kpi-sub" id="admKpiTopScore">-</span>
         </div>
@@ -183,7 +181,7 @@
         <div class="kpi-card">
             <span class="kpi-label">Total de Motoristas</span>
             <span class="kpi-val" id="admKpiTotal">-</span>
-            <span class="kpi-sub">Ativos no cruzamento atual</span>
+            <span class="kpi-sub">Ativos no grupo selecionado</span>
         </div>
     </div>
 
@@ -210,9 +208,14 @@
 
     <div class="kpi-grid" style="display: grid;">
         <div class="kpi-card highlight" style="border-color: var(--primary-light);">
-            <span class="kpi-label">Sua Posição (Ranking Geral)</span>
+            <span class="kpi-label">Sua Posição no Grupo</span>
             <span class="kpi-val" id="drvKpiPos">-</span>
-            <span class="kpi-sub">No grupo Consolidado</span>
+            <span class="kpi-sub" id="drvKpiPosSub">No seu Supervisor</span>
+        </div>
+        <div class="kpi-card highlight" style="border-color: var(--accent-gold);">
+            <span class="kpi-label">Sua Posição Geral</span>
+            <span class="kpi-val" id="drvKpiGeral">-</span>
+            <span class="kpi-sub">Geral (SD 1 e SD 2)</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Pontos Acumulados</span>
@@ -268,8 +271,6 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         syncFromGithub();
-
-        // Atalhos de teclado para login
         document.getElementById("cpfInput").addEventListener("keypress", function(e) { if (e.key === "Enter") loginMotorista(); });
         document.getElementById("adminSenha").addEventListener("keypress", function(e) { if (e.key === "Enter") loginAdmin(); });
     });
@@ -318,7 +319,6 @@
                     for (let i = 0; i < Math.min(15, aoa.length); i++) {
                         if (!aoa[i]) continue;
                         let rowStr = aoa[i].join(" ").toLowerCase();
-
                         if (rowStr.includes("codigo") && (rowStr.includes("habilitacao") || rowStr.includes("cpf"))) { headerIdx = i; type = "BASE"; break; }
                         if (rowStr.includes("devolvido") && rowStr.includes("pdv")) { headerIdx = i; type = "DEV"; break; }
                         if (rowStr.includes("dispersão")) { headerIdx = i; type = "KM"; break; }
@@ -337,7 +337,7 @@
                                 if(c) {
                                     baseMap[String(c).trim()] = r;
                                     if(cpf && cpf !== '-') {
-                                        let limpo = String(cpf).replace(/\D/g, ''); // Tira pontos e traços
+                                        let limpo = String(cpf).replace(/\D/g, ''); // Limpa o CPF p/ login exato
                                         validCPFs[limpo] = String(c).trim();
                                     }
                                 }
@@ -411,14 +411,26 @@
 
         if (validCPFs[inputCpf]) {
             const codMotorista = validCPFs[inputCpf];
-            const r = masterData["Geral Consolidado"].find(x => String(x.codigo) === codMotorista);
             
-            if (r) {
+            // Localiza o motorista NO SEU GRUPO ESPECÍFICO (SD 1, SD 2 ou SD 3)
+            let driverGrupoRow = null;
+            for (let g of ["SD 1", "SD 2", "SD 3"]) {
+                if (masterData[g]) {
+                    let found = masterData[g].find(x => String(x.codigo) === codMotorista);
+                    if (found) { driverGrupoRow = found; break; }
+                }
+            }
+            
+            if (driverGrupoRow) {
+                // Tenta achar ele no Geral (lembrando que Geral = apenas SD1 e SD2)
+                let driverGeralRow = masterData["Geral Consolidado"] ? masterData["Geral Consolidado"].find(x => String(x.codigo) === codMotorista) : null;
+                
                 document.getElementById('loginWrapper').style.display = 'none';
                 document.getElementById('driverDashboard').style.display = 'block';
-                buildDriverView(r);
+                
+                buildDriverView(driverGrupoRow, driverGeralRow);
             } else {
-                mostrarErroDrv("Motorista sem dados operacionais ativos.");
+                mostrarErroDrv("Motorista sem dados operacionais computados neste ciclo.");
             }
         } else {
             mostrarErroDrv("CPF não cadastrado na base.");
@@ -536,19 +548,21 @@
                 atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0,
                 metas_batidas: metas,
                 
-                real_rating: r_rating, meta_rating: META_RATING,
-                real_dev: r_dev, meta_dev: META_DEV,
-                real_nps: r_nps, meta_nps: META_NPS,
-                real_disp: r_disp, meta_disp: META_DISP,
+                real_rating: r_rating, meta_rating: META_RATING, pt_r: pt_r,
+                real_dev: r_dev, meta_dev: META_DEV, pt_d: pt_d,
+                real_nps: r_nps, meta_nps: META_NPS, pt_n: pt_n,
+                real_disp: r_disp, meta_disp: META_DISP, pt_k: pt_k,
                 
                 status_base: b.status || '-',
-                cnh_validade: b.validade || '-',
                 cidades: driverCities.join(', ') || '-',
                 tot_p: totP, tot_d: totD, tot_r: totR
             });
         }
 
-        masterData = { "Geral Consolidado": [...consolidados] };
+        masterData = {};
+        
+        // GERAL CONSOLIDADO: APENAS SD 1 E SD 2 (SD 3 é excluído daqui conforme regras)
+        masterData["Geral Consolidado"] = consolidados.filter(x => x.grupo === "SD 1" || x.grupo === "SD 2");
         masterData["SD 1"] = consolidados.filter(x => x.grupo === "SD 1");
         masterData["SD 2"] = consolidados.filter(x => x.grupo === "SD 2");
         masterData["SD 3"] = consolidados.filter(x => x.grupo === "SD 3");
@@ -559,28 +573,42 @@
                 if (b.pontos_totais !== a.pontos_totais) return b.pontos_totais - a.pontos_totais;
                 return b.atend_vol - a.atend_vol;
             });
+            // Atribui posições após o sorteio
             masterData[k].forEach((r, idx) => r.pos = idx + 1);
         });
     }
 
     // ================= FUNÇÕES DO DASHBOARD DO MOTORISTA =================
-    function buildDriverView(r) {
-        document.getElementById('driverHeaderTitle').innerText = `Olá, ${r.nome.split(' ')[0]}`;
+    function buildDriverView(r_grupo, r_geral) {
+        document.getElementById('driverHeaderTitle').innerText = `Olá, ${r_grupo.nome.split(' ')[0]}`;
         
-        let rankClass = r.pos === 1 ? 'rank-1' : (r.pos === 2 ? 'rank-2' : (r.pos === 3 ? 'rank-3' : ''));
-        document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClass}" style="width:40px; height:40px; font-size:18px;">${r.pos}</span>`;
-        document.getElementById('drvKpiPts').innerText = r.pontos_totais;
-        document.getElementById('drvKpiMetas').innerText = r.metas_batidas;
+        // Posição no Grupo
+        let rankClassGrupo = r_grupo.pos === 1 ? 'rank-1' : (r_grupo.pos === 2 ? 'rank-2' : (r_grupo.pos === 3 ? 'rank-3' : ''));
+        document.getElementById('drvKpiPos').innerHTML = `<span class="rank-badge ${rankClassGrupo}" style="width:40px; height:40px; font-size:18px;">${r_grupo.pos}</span>`;
+        document.getElementById('drvKpiPosSub').innerText = `No seu grupo (${r_grupo.grupo})`;
+        
+        // Posição Geral (Se for de SD 3, não tem posição no geral)
+        if (r_geral) {
+            let rankClassGeral = r_geral.pos === 1 ? 'rank-1' : (r_geral.pos === 2 ? 'rank-2' : (r_geral.pos === 3 ? 'rank-3' : ''));
+            document.getElementById('drvKpiGeral').innerHTML = `<span class="rank-badge ${rankClassGeral}" style="width:40px; height:40px; font-size:18px;">${r_geral.pos}</span>`;
+        } else {
+            document.getElementById('drvKpiGeral').innerHTML = `<span style="font-size: 24px; font-weight: bold; color: var(--text-muted);">-</span>`;
+        }
+
+        document.getElementById('drvKpiPts').innerText = r_grupo.pontos_totais;
+        document.getElementById('drvKpiMetas').innerText = r_grupo.metas_batidas;
 
         document.getElementById('driverPersonalGrid').innerHTML = `
-            <div class="modal-item"><span>Código | Supervisor</span><strong>${r.codigo} | ${r.grupo}</strong></div>
-            <div class="modal-item"><span>Status | CNH</span><strong>${r.status_base} | Validade: ${r.cnh_validade}</strong></div>
-            <div class="modal-item" style="grid-column: span 2;"><span>Cidades de Atuação</span><strong>${r.cidades || '-'}</strong></div>
+            <div class="modal-item"><span>Código | Supervisor</span><strong>${r_grupo.codigo} | ${r_grupo.grupo}</strong></div>
+            <div class="modal-item"><span>Status na Base</span><strong>${r_grupo.status_base || '-'}</strong></div>
+            <div class="modal-item" style="grid-column: span 2;"><span>Cidades Atendidas</span><strong>${r_grupo.cidades || '-'}</strong></div>
             
-            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r.real_rating)} / 5,00 (Meta: 4,94) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_rating, r.meta_rating)}</span></strong></div>
-            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r.real_dev)} (Meta: ${fmtPct(r.meta_dev)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_dev, r.meta_dev)}</span></strong></div>
-            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r.real_nps)} (Meta: ${fmtPct(r.meta_nps)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_nps, r.meta_nps)}</span></strong></div>
-            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r.real_disp)} (Meta: ${fmtPct(r.meta_disp)}) <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r.real_disp, r.meta_disp)}</span></strong></div>
+            <div class="modal-item" style="grid-column: span 2;"><span>NPS Respostas (Cruzado)</span><strong>${r_grupo.tot_p || 0} Promotores / ${r_grupo.tot_d || 0} Detratores / ${r_grupo.tot_r || 0} Total</strong></div>
+
+            <div class="modal-item"><span>Real Rating</span><strong>${fmtNum(r_grupo.real_rating)} / 5,00 <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_rating, r_grupo.meta_rating)}</span></strong></div>
+            <div class="modal-item"><span>Real Devolução</span><strong>${fmtPct(r_grupo.real_dev)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_dev, r_grupo.meta_dev)}</span></strong></div>
+            <div class="modal-item"><span>Calculado NPSM Cidades</span><strong>${fmtPct(r_grupo.real_nps)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_nps, r_grupo.meta_nps)}</span></strong></div>
+            <div class="modal-item"><span>Real Dispersão KM</span><strong>${fmtPct(r_grupo.real_disp)} <br><span style="color:var(--primary); font-size:12px;">Atingimento: ${calcAtingimento(r_grupo.real_disp, r_grupo.meta_disp)}</span></strong></div>
         `;
     }
 
@@ -689,7 +717,11 @@
     }
 
     function openAdminModal(code) {
-        const r = masterData[activeTab].find(x => String(x.codigo) === String(code));
+        let r = null;
+        for (const rows of Object.values(masterData)) {
+            r = rows.find(x => String(x.codigo) === String(code));
+            if (r) break;
+        }
         if (!r) return;
 
         document.getElementById('modalDriverName').innerText = r.nome;
@@ -719,6 +751,7 @@
         const exportArr = masterData[activeTab].map(r => ({
             "Posição": r.pos, "Código": r.codigo, "Nome": r.nome, "Grupo": r.grupo,
             "Pontos Totais": r.pontos_totais, "Avaliações/Entregas": r.atend_vol, "Metas Batidas": r.metas_batidas,
+            "Status Base": r.status_base, "Cidades Atendidas": r.cidades,
             
             "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating),
             "% Ating. Rating": calcAtingimento(r.real_rating, r.meta_rating),
