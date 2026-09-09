@@ -169,7 +169,6 @@
             header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
             .btn-logout { width: 100%; text-align: center; }
             
-            /* Correção do Layout das Caixas (KPIs) - Força 1 coluna no celular */
             .kpi-grid { grid-template-columns: 1fr !important; gap: 12px; }
             
             .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
@@ -178,7 +177,6 @@
             .tabs-group { overflow-x: auto; padding-bottom: 8px; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; width: 100%; }
             .tab-btn { white-space: nowrap; flex-shrink: 0; }
             
-            /* TABELA VIRA BLOCOS NO CELULAR */
             .table-container { background: transparent; border: none; box-shadow: none; margin-bottom: 10px; overflow: visible; padding: 0; }
             .table-container table { width: 100%; display: block; border-collapse: collapse; }
             .table-container thead { display: none; }
@@ -218,7 +216,6 @@
             ⏳ Sincronizando banco de dados...
         </div>
 
-        <!-- FORMULÁRIO MOTORISTA -->
         <div id="loginFormMotorista" style="display:none;">
             <input type="text" id="cpfInput" class="login-input" placeholder="Digite seu CPF (Apenas números)" autocomplete="off">
             <button class="btn-login" onclick="loginMotorista()">Acessar Meus Resultados</button>
@@ -231,18 +228,14 @@
             <div class="login-toggle" style="margin-top: 10px;" onclick="toggleLogin('ADMIN')">Acesso Gestor / Administrador</div>
         </div>
 
-        <!-- FORMULÁRIO DE CADASTRO (WHATSAPP REDIRECT) -->
         <div id="loginFormCadastro" style="display:none;">
             <h3 style="color: var(--text-dark); margin-bottom: 12px;">Liberação de Acesso</h3>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Para acessar o portal, seu CPF precisa estar registrado na nossa Base Operacional. Clique abaixo para enviar seus dados ao Suporte.</p>
-            
             <input type="text" id="cadastroCpf" class="login-input" placeholder="Digite seu CPF para enviar" autocomplete="off">
-            
             <button class="btn-login btn-whatsapp" onclick="solicitarCadastro()">Enviar para o Suporte</button>
             <div class="login-toggle" onclick="toggleCadastro(false)">Voltar para o Login</div>
         </div>
 
-        <!-- FORMULÁRIO ADMIN -->
         <div id="loginFormAdmin" style="display:none;">
             <input type="text" id="adminUser" class="login-input" placeholder="Seu Usuário (ex: admin)" autocomplete="off">
             <input type="password" id="adminSenha" class="login-input" placeholder="Sua Senha" autocomplete="off">
@@ -264,7 +257,7 @@
     </header>
 
     <div class="rules-card">
-        <strong>Regras (Ambev):</strong> Rating (>= 4,95). Devolução (<= 2,20%). Dispersão KM (<= 10%). NPS (>= 75%).<br>
+        <strong>Regras Dinâmicas (Mês Atual):</strong> Rating (>= <span class="din-rating-meta">4,95</span>). Devolução (<= <span class="din-dev-meta">2,20%</span>). Dispersão KM (<= 10%). NPS (>= 75%).<br>
         O Ranking Geral unifica somente <strong>SD 1 e SD 2</strong>.
     </div>
 
@@ -349,19 +342,26 @@
     // ================= CONTAS DE GESTORES (ADMINS) =================
     const ADMIN_USERS = {
         "admin1": { senha: "vini2000", nome: "Manutenção" },
-        "gestor_sd1": { senha: "senha1", nome: "Supervisor 1" },
-        "gestor_sd2": { senha: "senha2", nome: "Supervisor 2" },
-        "gestor_sd3": { senha: "senha3", nome: "Supervisor 3" },
+        "gestor_sd1": { senha: "senha1", nome: "Supervisor SD 1" },
+        "gestor_sd2": { senha: "senha2", nome: "Supervisor SD 2" },
+        "gestor_sd3": { senha: "senha3", nome: "Supervisor SD 3" },
+        "gestor_cod1": { senha: "cod_senha1", nome: "Coordenador" }
     };
 
+    // ================= ARQUIVOS DE DADOS (Agora com os novos CSVs de Metas) =================
     const fileNames = [
         "Base Motoristas.xlsx", "Devolução.xlsx", "Dispersão KM por Motorista.xlsx",
-        "NPS.xlsx", "Planificador Motorista Rating.xlsx", "Planificador Rating.xlsx"
+        "NPS.xlsx", "Planificador Motorista Rating.xlsx", "Planificador Rating.xlsx",
+        "Metas Rating.csv", "Metas Dev.csv"
     ];
 
     let masterData = {};
     let activeTab = "Geral Consolidado";
     let validCPFs = {}; 
+    
+    // Variáveis Globais de Meta (Alimentadas dinamicamente pelos CSVs)
+    let globalMetaRating = 4.95;
+    let globalMetaDev = 2.20;
 
     window.addEventListener('DOMContentLoaded', () => {
         syncFromGithub();
@@ -416,6 +416,11 @@
     async function syncFromGithub() {
         let baseMap = {}, devMap = {}, kmMap = {}, pmrMap = {}, citiesMap = {}, npsMap = {};
 
+        // Identifica o mês atual para buscar nas planilhas de Metas (CSV)
+        const monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+        const currentMonthIndex = new Date().getMonth();
+        const monthPrefix = monthNames[currentMonthIndex].substring(0, 3); // "jan", "fev", "mar", "set", etc.
+
         try {
             for (const fileName of fileNames) {
                 const url = './' + encodeURIComponent(fileName);
@@ -423,6 +428,45 @@
                 if (!response.ok) continue; 
                 
                 const arrayBuffer = await response.arrayBuffer();
+
+                // 1. Processamento Inteligente de Metas Dinâmicas (CSVs)
+                if (fileName.toLowerCase().endsWith('.csv')) {
+                    const decoder = new TextDecoder('iso-8859-1'); // Proteção contra acentuação no CSV
+                    const text = decoder.decode(arrayBuffer);
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                    if(lines.length === 0) continue;
+                    
+                    const separator = lines[0].includes(';') ? ';' : ',';
+                    const headers = lines[0].split(separator).map(h => h.trim().toLowerCase());
+                    let monthIndex = headers.findIndex(h => h.includes('mês') || h.includes('mes') || h.includes('ms'));
+
+                    if (fileName.includes('GranDourados')) {
+                        let ratingIndex = headers.findIndex(h => h.includes('rating'));
+                        if (monthIndex !== -1 && ratingIndex !== -1) {
+                            lines.slice(1).forEach(line => {
+                                const cols = line.split(separator).map(c => c.trim());
+                                if (cols[monthIndex] && cols[monthIndex].toLowerCase().startsWith(monthPrefix)) {
+                                    let val = parseNum(cols[ratingIndex]);
+                                    if(!isNaN(val)) globalMetaRating = val;
+                                }
+                            });
+                        }
+                    } else if (fileName.includes('Metas Devolução') || fileName.includes('Devolucao')) {
+                        let devIndex = headers.findIndex(h => h.includes('devolução pdv') || h.includes('devolucao pdv') || h.includes('devolu'));
+                        if (monthIndex !== -1 && devIndex !== -1) {
+                            lines.slice(1).forEach(line => {
+                                const cols = line.split(separator).map(c => c.trim());
+                                if (cols[monthIndex] && cols[monthIndex].toLowerCase().startsWith(monthPrefix)) {
+                                    let val = parsePct(cols[devIndex]);
+                                    if(!isNaN(val)) globalMetaDev = val;
+                                }
+                            });
+                        }
+                    }
+                    continue; // CSV já foi lido, pula para o próximo arquivo da lista
+                }
+
+                // 2. Processamento Normal dos Resultados (Excel XLSX)
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
                 
                 workbook.SheetNames.forEach(sheetName => {
@@ -479,6 +523,10 @@
             }
 
             if (Object.keys(baseMap).length > 0) {
+                // Atualiza a tela de Regras do Admin com as Metas Dinâmicas que foram lidas!
+                document.querySelectorAll('.din-rating-meta').forEach(el => el.innerText = fmtNum(globalMetaRating));
+                document.querySelectorAll('.din-dev-meta').forEach(el => el.innerText = fmtPct(globalMetaDev));
+                
                 executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap);
                 document.getElementById('loginLoading').style.display = 'none';
                 document.getElementById('loginFormMotorista').style.display = 'block';
@@ -565,7 +613,9 @@
 
     function executeCrossReference(baseMap, devMap, kmMap, pmrMap, citiesMap, npsMap) {
         let consolidados = [];
-        const META_RATING = 4.95, META_DEV = 2.20, META_NPS = 75.00;
+        const META_RATING = globalMetaRating;
+        const META_DEV = globalMetaDev;
+        const META_NPS = 75.00;
         
         for (const [code, b] of Object.entries(baseMap)) {
             const dev = devMap[code] || {}; const km = kmMap[code] || {}; const pmr = pmrMap[code] || {};
