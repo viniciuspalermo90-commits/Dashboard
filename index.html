@@ -169,7 +169,8 @@
             header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
             .btn-logout { width: 100%; text-align: center; }
             
-            .kpi-grid { grid-template-columns: 1fr !important; gap: 12px; }
+            #adminDashboard .kpi-grid { grid-template-columns: 1fr; }
+            #driverDashboard .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
             
             .controls-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
             .filter-group { flex-direction: column; width: 100%; }
@@ -231,7 +232,7 @@
 
         <div id="loginFormCadastro" style="display:none;">
             <h3 style="color: var(--text-dark); margin-bottom: 12px;">Liberação de Acesso</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Para acessar o portal, seu CPF precisa estar registrado na nossa Base Operacional. Clique abaixo para enviar seus dados ao Suporte.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Para acessar o portal, seu CPF precisa estar registado na nossa Base Operacional. Clique abaixo para enviar os seus dados ao Suporte.</p>
             <input type="text" id="cadastroCpf" class="login-input" placeholder="Digite seu CPF para enviar" autocomplete="off">
             <button class="btn-login btn-whatsapp" onclick="solicitarCadastro()">Enviar para o Suporte</button>
             <div class="login-toggle" onclick="toggleCadastro(false)">Voltar para o Login</div>
@@ -340,8 +341,9 @@
 </div>
 
 <script>
+    
     // ================= CONTAS DE GESTORES (ADMINS) =================
-    const ADMIN_USERS = {
+     const ADMIN_USERS = {
         "admin1": { senha: "vini2000", nome: "Manutenção" },
         "gestor_sd1": { senha: "senha1", nome: "Supervisor SD 1" },
         "gestor_sd2": { senha: "senha2", nome: "Supervisor SD 2" },
@@ -360,7 +362,6 @@
     let activeTab = "Geral Consolidado";
     let validCPFs = {}; 
     
-    // Variáveis Globais de Meta (Alimentadas dinamicamente pelos CSVs)
     let globalMetaRating = 4.95;
     let globalMetaDev = 2.20;
 
@@ -429,7 +430,6 @@
                 
                 const arrayBuffer = await response.arrayBuffer();
 
-                // 1. Processamento Inteligente de Metas Dinâmicas (CSVs) - ATUALIZADO PARA EXATIDÃO
                 if (fileName.toLowerCase().endsWith('.csv')) {
                     const decoder = new TextDecoder('iso-8859-1'); 
                     const text = decoder.decode(arrayBuffer);
@@ -452,9 +452,7 @@
                             });
                         }
                     } else if (fileName.includes('Metas Dev')) {
-                        // Busca exata pela coluna "Devolução PDV" ou "devolucao pdv" para evitar ler "CDP Devolução"
                         let devIndex = headers.findIndex(h => h === 'devolução pdv' || h === 'devolucao pdv' || h === 'devolução' || h === 'devolucao');
-                        
                         if (monthIndex !== -1 && devIndex !== -1) {
                             lines.slice(1).forEach(line => {
                                 const cols = line.split(separator).map(c => c.trim());
@@ -468,7 +466,6 @@
                     continue; 
                 }
 
-                // 2. Processamento Normal dos Resultados (Excel XLSX)
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', raw: false });
                 
                 workbook.SheetNames.forEach(sheetName => {
@@ -634,11 +631,12 @@
 
             let pts = 0; let metas = 0;
             let val_r = 0, val_d = 0, val_n = 0, val_k = 0;
+            let pt_r = 0, pt_d = 0, pt_n = 0, pt_k = 0;
             
-            if (!isNaN(r_rating)) { pts += (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0)); if (r_rating >= META_RATING) { metas++; val_r = 160.00; } }
-            if (!isNaN(r_dev)) { pts += (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0)); if (r_dev <= META_DEV) { metas++; val_d = 160.00; } }
-            if (!isNaN(r_nps)) { pts += (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0)); if (r_nps >= META_NPS) { metas++; val_n = 320.00; } }
-            if (!isNaN(r_disp)) { pts += (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0)); if (r_disp <= META_DISP) { metas++; val_k = 160.00; } }
+            if (!isNaN(r_rating)) { pt_r = (r_rating >= 5.0) ? 30 : (r_rating >= META_RATING ? 25 : (r_rating >= 4.91 ? 10 : 0)); pts += pt_r; if (r_rating >= META_RATING) { metas++; val_r = 160.00; } }
+            if (!isNaN(r_dev)) { pt_d = (r_dev === 0) ? 35 : (r_dev <= (META_DEV/1.1) ? 30 : (r_dev <= META_DEV ? 25 : 0)); pts += pt_d; if (r_dev <= META_DEV) { metas++; val_d = 160.00; } }
+            if (!isNaN(r_nps)) { pt_n = (r_nps >= 97.5) ? 35 : (r_nps >= 82.5 ? 30 : (r_nps >= META_NPS ? 25 : 0)); pts += pt_n; if (r_nps >= META_NPS) { metas++; val_n = 320.00; } }
+            if (!isNaN(r_disp)) { pt_k = (r_disp <= (META_DISP*0.7)) ? 35 : (r_disp <= (META_DISP*0.9) ? 30 : (r_disp <= META_DISP ? 25 : 0)); pts += pt_k; if (r_disp <= META_DISP) { metas++; val_k = 160.00; } }
 
             let valor_total = val_r + val_d + val_n + val_k;
             let sheetGrupo = "Outros";
@@ -651,10 +649,10 @@
             consolidados.push({
                 codigo: code, nome: getVal(b, ['Nome', 'Nome Motorista']) || '-', grupo: sheetGrupo,
                 pontos_totais: pts, atend_vol: parseInt(getVal(pmr, ['Avaliações'])) || 0, metas_batidas: metas,
-                real_rating: r_rating, meta_rating: META_RATING, val_r: val_r,
-                real_dev: r_dev, meta_dev: META_DEV, val_d: val_d,
-                real_nps: r_nps, meta_nps: META_NPS, val_n: val_n,
-                real_disp: r_disp, meta_disp: META_DISP, val_k: val_k,
+                real_rating: r_rating, meta_rating: META_RATING, val_r: val_r, pt_r: pt_r,
+                real_dev: r_dev, meta_dev: META_DEV, val_d: val_d, pt_d: pt_d,
+                real_nps: r_nps, meta_nps: META_NPS, val_n: val_n, pt_n: pt_n,
+                real_disp: r_disp, meta_disp: META_DISP, val_k: val_k, pt_k: pt_k,
                 valor_total: valor_total,
                 status_base: b.status || '-', cidades: driverCities.join(', ') || '-', tot_p: totP, tot_d: totD, tot_r: totR
             });
@@ -855,10 +853,10 @@
             "Posição": r.pos, "Código": r.codigo, "Nome": r.nome, "Grupo": r.grupo,
             "Incentivo Total (R$)": r.valor_total, "Metas Batidas": r.metas_batidas, "Pontos Totais": r.pontos_totais, 
             "Avaliações": r.atend_vol, "Cidades Atendidas": r.cidades,
-            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating), "R$ Rating": r.val_r,
-            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev), "R$ Devolução": r.val_d,
-            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps), "R$ NPS": r.val_n,
-            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp), "R$ Dispersão": r.val_k
+            "Real Rating": fmtNum(r.real_rating), "Meta Rating": fmtNum(r.meta_rating), "R$ Rating": r.val_r, "Pts Rating": r.pt_r,
+            "Real Devolução": fmtPct(r.real_dev), "Meta Devolução": fmtPct(r.meta_dev), "R$ Devolução": r.val_d, "Pts Devolução": r.pt_d,
+            "Real NPS": fmtPct(r.real_nps), "Meta NPS": fmtPct(r.meta_nps), "R$ NPS": r.val_n, "Pts NPS": r.pt_n,
+            "Real Dispersão": fmtPct(r.real_disp), "Meta Dispersão": fmtPct(r.meta_disp), "R$ Dispersão": r.val_k, "Pts Dispersão": r.pt_k
         }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportArr), activeTab);
